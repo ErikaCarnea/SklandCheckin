@@ -23,4 +23,6 @@ go.work
 .gitignore
 .gitattributes
 
-config.yaml
+*.yaml
+
+.idea
