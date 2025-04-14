@@ -63,4 +63,10 @@ func main() {
 			api.FormatAttendanceResult(result),
 		)
 	}
+	fmt.Print("按回车键退出...")
+	var input string
+	_, err = fmt.Scanln(&input)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
