@@ -5,6 +5,7 @@ import (
 	"Skland/models"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -35,7 +36,12 @@ func (a *AttendanceAPI) SignAttendance(uid, gameId string) (*models.AttendanceRe
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(resp.Body)
 
 	body, err := client.ReadResponseBody(resp)
 	if err != nil {

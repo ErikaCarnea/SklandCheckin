@@ -5,6 +5,7 @@ import (
 	"Skland/models"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -33,7 +34,12 @@ func (a *AuthAPI) Login(account models.AccountInfo) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(resp.Body)
 
 	var result models.LoginResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -67,7 +73,12 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(resp.Body)
 
 	var credResult models.CredResult
 	if err := json.NewDecoder(resp.Body).Decode(&credResult); err != nil {
@@ -97,7 +108,12 @@ func (a *AuthAPI) getGrantCode(token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(resp.Body)
 
 	var result models.GrantResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
