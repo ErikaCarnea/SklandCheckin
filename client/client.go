@@ -82,11 +82,22 @@ func ReadResponseBody(resp *http.Response) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer gzReader.Close()
+		defer func(gzReader *gzip.Reader) {
+			err := gzReader.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(gzReader)
+
 		reader = gzReader
 	case "deflate":
 		reader = flate.NewReader(resp.Body)
-		defer reader.(io.ReadCloser).Close()
+		defer func(closer io.ReadCloser) {
+			err := closer.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(reader.(io.ReadCloser))
 	default:
 		reader = resp.Body
 	}
@@ -138,18 +149,39 @@ func (c *HttpClient) PrintAllPlayersInfo(bindings []models.Binding) error {
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
 
-		body, err := ReadResponseBody(resp)
-		if err != nil {
-			return err
-		}
+		func() {
+			defer func() {
+				if closeErr := resp.Body.Close(); closeErr != nil {
+					fmt.Printf("警告：关闭响应体失败(UID:%s): %v\n", binding.Uid, closeErr)
+				}
+			}()
 
-		content := string(body)
+			body, err := ReadResponseBody(resp)
+			if err != nil {
+				fmt.Printf("读取响应失败: %v\n", err)
+				return
+			}
 
-		fmt.Printf("=== 玩家 %s (%s) ===\n", binding.NickName, binding.Uid)
-		fmt.Println(content)
-		fmt.Println("========================")
+			content := string(body)
+
+			// 将数据写入文件
+			//file, err := os.Create("output.json")
+			//if err != nil {
+			//	panic(err)
+			//}
+			//defer file.Close()
+			//_, err = file.WriteString(content)
+			//if err != nil {
+			//	panic(err)
+			//}
+
+			fmt.Printf("=== 玩家 %s (%s) ===\n", binding.NickName, binding.Uid)
+			fmt.Println(content)
+			fmt.Println("========================")
+
+		}()
+
 	}
 	return nil
 }
