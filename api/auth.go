@@ -22,7 +22,7 @@ func NewAuthAPI(c *client.HttpClient) *AuthAPI {
 func (a *AuthAPI) Login(account models.AccountInfo) (string, error) {
 	reqBody := map[string]string{
 		"phone":    account.Phone,
-		"password": account.Password,
+		"password": string(account.Password),
 	}
 
 	resp, err := a.client.DoRequest(

@@ -12,7 +12,7 @@ func main() {
 	// 加载配置
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("配置加载失败: %v", err)
+		log.Fatalf("初始化失败: %v", err)
 	}
 
 	// 初始化客户端

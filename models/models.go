@@ -1,15 +1,20 @@
 package models
 
-type AccountInfo struct {
-	Phone    string `yaml:"phone"`
-	Password string `yaml:"password"`
+import "gopkg.in/yaml.v3"
+
+type QuotedString string
+
+func (s QuotedString) MarshalYAML() (interface{}, error) {
+	return &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: string(s),
+		Style: yaml.DoubleQuotedStyle,
+	}, nil
 }
 
-type AppConfig struct {
-	Account struct {
-		Phone    string
-		Password string
-	}
+type AccountInfo struct {
+	Phone    string       `yaml:"phone"`
+	Password QuotedString `yaml:"password"`
 }
 
 type LoginResult struct {
