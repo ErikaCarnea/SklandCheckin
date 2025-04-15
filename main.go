@@ -5,6 +5,7 @@ import (
 	"Skland/client"
 	"Skland/config"
 	"Skland/models"
+	"Skland/utils"
 	"fmt"
 	"log"
 	"os"
@@ -18,16 +19,17 @@ func main() {
 	authAPI := api.NewAuthAPI(httpClient)
 	bindingAPI := api.NewBindingAPI(httpClient)
 	attendanceAPI := api.NewAttendanceAPI(httpClient)
+	playerAPI := api.NewPlayerAPI(httpClient)
 
 	if token, exists := config.CheckSavedToken(); exists {
 		if credResult, err := tryAutoLogin(authAPI, token); err != nil {
-			proceedWithCredential(httpClient, bindingAPI, attendanceAPI, credResult)
+			proceedWithCredential(httpClient, bindingAPI, attendanceAPI, playerAPI, credResult)
 			return
 		}
 	}
 
 	credResult := loginProcess(authAPI)
-	proceedWithCredential(httpClient, bindingAPI, attendanceAPI, credResult)
+	proceedWithCredential(httpClient, bindingAPI, attendanceAPI, playerAPI, credResult)
 }
 
 func tryAutoLogin(authAPI *api.AuthAPI, token string) (*models.CredResult, error) {
@@ -84,6 +86,7 @@ func proceedWithCredential(
 	httpClient *client.HttpClient,
 	bindingAPI *api.BindingAPI,
 	attendanceAPI *api.AttendanceAPI,
+	playerAPI *api.PlayerApi,
 	credResult *models.CredResult) {
 	// 设置凭证
 	httpClient.SetCred(credResult.Data.Cred)
@@ -96,7 +99,7 @@ func proceedWithCredential(
 	}
 
 	// 打印玩家信息
-	if err := httpClient.PrintAllPlayersInfo(bindings); err != nil {
+	if err := playerAPI.PrintAllPlayersInfo(bindings); err != nil {
 		log.Fatalf("获取绑定玩家数据失败: %v", err)
 	}
 
@@ -111,7 +114,7 @@ func proceedWithCredential(
 		fmt.Printf("[%s] (%s) %s\n",
 			binding.ChannelName,
 			binding.NickName,
-			api.FormatAttendanceResult(result),
+			utils.FormatAttendanceResult(result),
 		)
 	}
 

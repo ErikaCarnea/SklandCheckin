@@ -1,12 +1,10 @@
 package client
 
 import (
-	"Skland/models"
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -133,55 +131,4 @@ func (c *HttpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	}
 
 	return headers, nil
-}
-
-func (c *HttpClient) PrintAllPlayersInfo(bindings []models.Binding) error {
-	for _, binding := range bindings {
-		urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/player/info?uid=%s", binding.Uid)
-
-		headers, err := c.GetSignHeaders(urlStr, http.MethodGet, nil)
-		if err != nil {
-			return fmt.Errorf("获取签名头失败(UID:%s): %w", binding.Uid, err)
-		}
-		headers["Content-Type"] = "application/json"
-
-		resp, err := c.DoRequest(http.MethodGet, urlStr, nil, headers)
-		if err != nil {
-			return err
-		}
-
-		func() {
-			defer func() {
-				if closeErr := resp.Body.Close(); closeErr != nil {
-					fmt.Printf("警告：关闭响应体失败(UID:%s): %v\n", binding.Uid, closeErr)
-				}
-			}()
-
-			body, err := ReadResponseBody(resp)
-			if err != nil {
-				fmt.Printf("读取响应失败: %v\n", err)
-				return
-			}
-
-			content := string(body)
-
-			// 将数据写入文件
-			//file, err := os.Create("output.json")
-			//if err != nil {
-			//	panic(err)
-			//}
-			//defer file.Close()
-			//_, err = file.WriteString(content)
-			//if err != nil {
-			//	panic(err)
-			//}
-
-			fmt.Printf("=== 玩家 %s (%s) ===\n", binding.NickName, binding.Uid)
-			fmt.Println(content)
-			fmt.Println("========================")
-
-		}()
-
-	}
-	return nil
 }
