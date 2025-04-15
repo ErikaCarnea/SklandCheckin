@@ -8,10 +8,10 @@ import (
 )
 
 type BindingAPI struct {
-	client *client.HttpClient
+	client client.HTTPClient
 }
 
-func NewBindingAPI(c *client.HttpClient) *BindingAPI {
+func NewBindingAPI(c client.HTTPClient) *BindingAPI {
 	return &BindingAPI{client: c}
 }
 
