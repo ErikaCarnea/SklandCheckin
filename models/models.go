@@ -51,13 +51,22 @@ type Binding struct {
 }
 
 type BindingResult struct {
-	Code int `json:"code"`
-	Data struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
 		List []struct {
 			AppCode     string    `json:"appCode"`
 			BindingList []Binding `json:"bindingList"`
 		} `json:"list"`
 	} `json:"data"`
+}
+
+func (r BindingResult) GetCode() int {
+	return r.Code
+}
+
+func (r BindingResult) GetMessage() string {
+	return r.Message
 }
 
 type AttendanceRequest struct {
@@ -78,4 +87,30 @@ type AttendanceResult struct {
 		} `json:"awards"`
 	} `json:"data"`
 	Message string `json:"message"`
+}
+
+func (r AttendanceResult) GetCode() int {
+	return r.Code
+}
+
+func (r AttendanceResult) GetMessage() string {
+	return r.Message
+}
+
+// GetCode LoginResult 实现接口
+func (r *LoginResult) GetCode() int {
+	return r.Status
+}
+
+func (r *LoginResult) GetMessage() string {
+	return r.Message
+}
+
+// GetCode CredResult 实现接口
+func (r *CredResult) GetCode() int {
+	return r.Code
+}
+
+func (r *CredResult) GetMessage() string {
+	return r.Message
 }

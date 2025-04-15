@@ -9,7 +9,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 )
+
+type CredentialContext struct {
+	HttpClient    *client.HttpClient
+	BindingAPI    *api.BindingAPI
+	AttendanceAPI *api.AttendanceAPI
+	PlayerAPI     *api.PlayerApi
+	CredResult    *models.CredResult
+}
 
 func main() {
 	// 初始化客户端
@@ -21,24 +30,42 @@ func main() {
 	attendanceAPI := api.NewAttendanceAPI(httpClient)
 	playerAPI := api.NewPlayerAPI(httpClient)
 
+	ctx := &CredentialContext{
+		HttpClient:    httpClient,
+		BindingAPI:    bindingAPI,
+		AttendanceAPI: attendanceAPI,
+		PlayerAPI:     playerAPI,
+	}
+
 	if token, exists := config.CheckSavedToken(); exists {
-		if credResult, err := tryAutoLogin(authAPI, token); err != nil {
-			proceedWithCredential(httpClient, bindingAPI, attendanceAPI, playerAPI, credResult)
+		if credResult, err := tryAutoLogin(authAPI, token); err == nil {
+			ctx.CredResult = credResult
+			proceedWithCredential(ctx)
+			waitForExit()
 			return
 		}
 	}
 
 	credResult := loginProcess(authAPI)
-	proceedWithCredential(httpClient, bindingAPI, attendanceAPI, playerAPI, credResult)
+	ctx.CredResult = credResult
+	proceedWithCredential(ctx)
+	waitForExit()
+}
+
+func waitForExit() {
+	fmt.Println("\n签到执行完毕，按回车键退出程序...")
+	_, err := fmt.Scanln()
+	if err != nil {
+		return
+	}
 }
 
 func tryAutoLogin(authAPI *api.AuthAPI, token string) (*models.CredResult, error) {
 	credResult, err := authAPI.GetCredByToken(token)
 	if err != nil {
 		log.Printf("自动登录失败: %v，删除无效token文件", err)
-		err := os.Remove(config.TokenFileName)
-		if err != nil {
-			return nil, err
+		if err := os.Remove(config.TokenFileName); err != nil {
+			log.Printf("删除token文件失败: %v", err)
 		}
 		return nil, err
 	}
@@ -76,46 +103,54 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 	}
 
 	if err != nil {
-		log.Fatalf("登录失败: %v", err)
+		log.Printf("%v", err)
+		waitForExit()
+		os.Exit(1)
 	}
 	return credResult
 
 }
 
-func proceedWithCredential(
-	httpClient *client.HttpClient,
-	bindingAPI *api.BindingAPI,
-	attendanceAPI *api.AttendanceAPI,
-	playerAPI *api.PlayerApi,
-	credResult *models.CredResult) {
+func proceedWithCredential(ctx *CredentialContext) {
 	// 设置凭证
-	httpClient.SetCred(credResult.Data.Cred)
-	httpClient.SetSignToken(credResult.Data.Token)
+	ctx.HttpClient.SetCred(ctx.CredResult.Data.Cred)
+	ctx.HttpClient.SetSignToken(ctx.CredResult.Data.Token)
 
 	// 获取绑定列表
-	bindings, err := bindingAPI.GetBindingList()
+	bindings, err := ctx.BindingAPI.GetBindingList()
 	if err != nil {
-		log.Fatalf("获取绑定列表失败: %v", err)
+		log.Printf("获取绑定列表失败: %v", err)
+		waitForExit()
+		os.Exit(1)
 	}
 
 	// 打印玩家信息
-	if err := playerAPI.PrintAllPlayersInfo(bindings); err != nil {
-		log.Fatalf("获取绑定玩家数据失败: %v", err)
+	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
+		log.Printf("获取绑定玩家数据失败: %v", err)
+		waitForExit()
+		os.Exit(1)
 	}
 
 	// 执行签到
+	// 并发执行签到
+	var wg sync.WaitGroup
 	for _, binding := range bindings {
-		result, err := attendanceAPI.SignAttendance(binding.Uid, binding.ChannelMasterId)
-		if err != nil {
-			log.Printf("签到失败：%v", err)
-			continue
-		}
+		wg.Add(1)
+		go func(b models.Binding) {
+			defer wg.Done()
+			result, err := ctx.AttendanceAPI.SignAttendance(b.Uid, b.ChannelMasterId)
+			if err != nil {
+				log.Printf("签到失败：%v", err)
+				return
+			}
 
-		fmt.Printf("[%s] (%s) %s\n",
-			binding.ChannelName,
-			binding.NickName,
-			utils.FormatAttendanceResult(result),
-		)
+			fmt.Printf("[%s] (%s) %s\n",
+				b.ChannelName,
+				b.NickName,
+				utils.FormatAttendanceResult(result),
+			)
+		}(binding)
 	}
+	wg.Wait()
 
 }

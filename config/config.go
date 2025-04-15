@@ -1,7 +1,6 @@
 package config
 
 import (
-	"Skland/models"
 	"fmt"
 	"log"
 	"os"
@@ -10,66 +9,9 @@ import (
 
 const TokenFileName = "token.txt"
 
-type Config struct {
-	Account models.AccountInfo `yaml:"account"`
-}
-
-//func LoadConfig() (*Config, error) {
-//	exePath, err := os.Executable()
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to get executable path: %w", err)
-//	}
-//	//fmt.Printf("exePath: %v\n", exePath)
-//
-//	configPath := filepath.Join(filepath.Dir(exePath), "config.yaml")
-//	//fmt.Printf("configPath: %v\n", configPath)
-//
-//	// 检查配置文件是否存在
-//	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-//		fmt.Println("未找到配置文件，进入初始化流程...")
-//		account, err := promptUserForAccount()
-//		if err != nil {
-//			return nil, fmt.Errorf("获取账户信息失败: %w", err)
-//		}
-//
-//		// 创建并写入新配置文件
-//		cfg := Config{Account: account}
-//		data, err := yaml.Marshal(&cfg)
-//		if err != nil {
-//			return nil, fmt.Errorf("配置文件序列化失败: %w", err)
-//		}
-//
-//		if err := os.WriteFile(configPath, data, 0600); err != nil {
-//			return nil, fmt.Errorf("配置文件创建失败: %w", err)
-//		}
-//		fmt.Printf("配置文件已创建在: %s\n", configPath)
-//		return &cfg, nil
-//	} else if err != nil {
-//		return nil, fmt.Errorf("配置文件检查失败: %w", err)
-//	}
-//
-//	// 正常读取现有配置文件
-//	data, err := os.ReadFile(configPath)
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to read config file: %w", err)
-//	}
-//
-//	var cfg Config
-//	if err := yaml.Unmarshal(data, &cfg); err != nil {
-//		return nil, fmt.Errorf("failed to parse config: %w", err)
-//	}
-//
-//	if cfg.Account.Phone == "" || cfg.Account.Password == "" {
-//		return nil, fmt.Errorf("missing required account configuration")
-//	}
-//
-//	return &cfg, nil
-//}
-
-func SaveToken(token string) {
-	err := os.WriteFile(TokenFileName, []byte(token), 0644)
-	if err != nil {
-		panic(err)
+func SaveToken(token string) error {
+	if err := os.WriteFile(TokenFileName, []byte(token), 0644); err != nil {
+		return fmt.Errorf("保存Token到文件失败: %w", err)
 	}
 
 	fmt.Printf(
@@ -77,6 +19,7 @@ func SaveToken(token string) {
 			"如果需要再次运行，删除创建的这个文件即可\n",
 		TokenFileName,
 	)
+	return nil
 }
 
 func CheckSavedToken() (string, bool) {

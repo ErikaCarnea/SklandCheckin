@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/term"
 	"io"
 	"log"
 	"net/http"
@@ -26,22 +27,44 @@ func NewAuthAPI(c *client.HttpClient) *AuthAPI {
 
 func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
+
+	// 读取手机号
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("读取手机号失败: %w", err)
 	}
 	phone = strings.TrimSpace(phone)
 
+	// 读取密码
+	var password string
 	fmt.Print("请输入密码: ")
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
+	//password, err := reader.ReadString('\n')
+	//if err != nil {
+	//	return nil, fmt.Errorf("读取密码失败: %w", err)
+	//}
+	//password = strings.TrimSpace(password)
+	// 检测是否在真正的终端中运行
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		// 支持密码隐藏
+		passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			return nil, fmt.Errorf("读取密码失败（请确保在终端中运行程序）: %w", err)
+		}
+		password = strings.TrimSpace(string(passwordBytes))
+		fmt.Println() // 换行
+	} else {
+		// 非终端环境回退到明文输入
+		fmt.Println("警告：当前环境不支持密码隐藏，请输入密码（明文显示）:")
+		passwordInput, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, fmt.Errorf("读取密码失败: %w", err)
+		}
+		password = strings.TrimSpace(passwordInput)
 	}
-	password = strings.TrimSpace(password)
 
 	if phone == "" || password == "" {
-		log.Fatal("手机号和密码不能为空")
+		return nil, fmt.Errorf("手机号和密码不能为空")
 	}
 
 	reqBody := map[string]string{
@@ -56,29 +79,30 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		map[string]string{"Content-Type": "application/json"},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("登录请求失败: %w", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			panic(err)
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Printf("关闭响应体失败: %v", closeErr)
 		}
-	}(resp.Body)
+	}()
 
 	var result models.LoginResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("解析登录响应失败: %w", err)
 	}
 
 	if result.Status != 0 {
-		return nil, fmt.Errorf(result.Message)
+		return nil, fmt.Errorf("%s", result.Message)
 	}
-	config.SaveToken(result.Data.Token)
-	//return result.Data.Token, nil
+
+	if err = config.SaveToken(result.Data.Token); err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
 
 	credResult, err := a.GetCredByToken(result.Data.Token)
 	if err != nil {
-		log.Fatalf("获取凭证失败: %v", err)
+		return nil, fmt.Errorf("获取凭证失败: %w", err)
 	}
 	return credResult, nil
 }
@@ -88,7 +112,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("读取手机号失败: %w", err)
 	}
 	phone = strings.TrimSpace(phone)
 
@@ -106,7 +130,11 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("请求失败：%v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Printf("关闭响应体失败: %v", closeErr)
+		}
+	}()
 
 	// 检查HTTP状态码
 	if resp.StatusCode != http.StatusOK {
@@ -128,7 +156,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	fmt.Print("请输入验证码: ")
 	code, err := reader.ReadString('\n')
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("读取验证码失败: %w", err)
 	}
 	code = strings.TrimSpace(code)
 
@@ -144,7 +172,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		map[string]string{"Content-Type": "application/json"},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("登录请求失败: %w", err)
 	}
 
 	var loginResult models.LoginResult
@@ -154,11 +182,14 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	if result.Status != 0 {
 		return nil, fmt.Errorf(result.Message)
 	}
-	//return loginResult.Data.Token, nil
-	config.SaveToken(loginResult.Data.Token)
+
+	if err = config.SaveToken(loginResult.Data.Token); err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+
 	credResult, err := a.GetCredByToken(loginResult.Data.Token)
 	if err != nil {
-		log.Fatalf("获取凭证失败: %v", err)
+		return nil, fmt.Errorf("获取凭证失败: %v", err)
 	}
 	return credResult, nil
 }
@@ -189,7 +220,9 @@ func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 	if !ok {
 		return nil, fmt.Errorf("无效的数据结构，缺少content字段 (原始输入: %s)", code)
 	}
-	config.SaveToken(content)
+	if err = config.SaveToken(content); err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
 
 	credResult, err := a.GetCredByToken(content)
 	if err != nil {
