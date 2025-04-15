@@ -3,40 +3,41 @@ package main
 import (
 	"Skland/api"
 	"Skland/client"
-	"Skland/config"
 	"fmt"
 	"log"
 )
 
 func main() {
 	// 加载配置
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatalf("初始化失败: %v", err)
-	}
+	//cfg, err := config.LoadConfig()
+	//if err != nil {
+	//	log.Fatalf("初始化失败: %v", err)
+	//}
 
 	// 初始化客户端
 	httpClient := client.NewClient()
 
 	// 初始化各API模块
-	authAPI := api.NewAuthAPI(httpClient)
+	//authAPI := api.NewAuthAPI(httpClient)
 	bindingAPI := api.NewBindingAPI(httpClient)
 	attendanceAPI := api.NewAttendanceAPI(httpClient)
 
 	// 登录流程
-	token, err := authAPI.Login(cfg.Account)
-	if err != nil {
-		log.Fatalf("登录失败: %v", err)
-	}
-
+	//token, err := authAPI.LoginByPassword()
+	//token, err := authAPI.LoginByPhoneCode()
+	//if err != nil {
+	//	log.Fatalf("登录失败: %v", err)
+	//}
 	// 获取凭证
-	credResult, err := authAPI.GetCredByToken(token)
-	if err != nil {
-		log.Fatalf("获取凭证失败: %v", err)
-	}
+	//credResult, err := authAPI.GetCredByToken(token)
+	//if err != nil {
+	//	log.Fatalf("获取凭证失败: %v", err)
+	//}
 
-	httpClient.SetCred(credResult.Data.Cred)
-	httpClient.SetSignToken(credResult.Data.Token)
+	//credResult := api.LoginByCode()
+	//
+	//httpClient.SetCred(credResult.Data.Cred)
+	//httpClient.SetSignToken(credResult.Data.Token)
 
 	// 获取绑定列表
 	bindings, err := bindingAPI.GetBindingList()
@@ -62,11 +63,5 @@ func main() {
 			binding.NickName,
 			api.FormatAttendanceResult(result),
 		)
-	}
-	fmt.Print("按回车键退出...")
-	var input string
-	_, err = fmt.Scanln(&input)
-	if err != nil {
-		log.Fatal(err)
 	}
 }

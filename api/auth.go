@@ -3,10 +3,14 @@ package api
 import (
 	"Skland/client"
 	"Skland/models"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 const AppCode = "4ca99fa6b56cc2ba"
@@ -19,10 +23,29 @@ func NewAuthAPI(c *client.HttpClient) *AuthAPI {
 	return &AuthAPI{client: c}
 }
 
-func (a *AuthAPI) Login(account models.AccountInfo) (string, error) {
+func (a *AuthAPI) LoginByPassword() (string, error) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("请输入手机号: ")
+	phone, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+	phone = strings.TrimSpace(phone)
+
+	fmt.Print("请输入密码: ")
+	password, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+	password = strings.TrimSpace(password)
+
+	if phone == "" || password == "" {
+		log.Fatal("手机号和密码不能为空")
+	}
+
 	reqBody := map[string]string{
-		"phone":    account.Phone,
-		"password": string(account.Password),
+		"phone":    phone,
+		"password": password,
 	}
 
 	resp, err := a.client.DoRequest(
@@ -53,13 +76,117 @@ func (a *AuthAPI) Login(account models.AccountInfo) (string, error) {
 	return result.Data.Token, nil
 }
 
+func (a *AuthAPI) LoginByPhoneCode() (string, error) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("请输入手机号: ")
+	phone, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+	phone = strings.TrimSpace(phone)
+
+	reqBody := map[string]any{
+		"phone": phone,
+		"type":  2,
+	}
+
+	resp, err := a.client.DoRequest(
+		http.MethodPost,
+		"https://as.hypergryph.com/general/v1/send_phone_code",
+		reqBody,
+		map[string]string{"Content-Type": "application/json"},
+	)
+	if err != nil {
+		return "", fmt.Errorf("请求失败：%v", err)
+	}
+	defer resp.Body.Close()
+
+	// 检查HTTP状态码
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("请求失败，HTTP状态码：%d", resp.StatusCode)
+	}
+
+	var result struct {
+		Status  int    `json:"status"`
+		Type    string `json:"type"`
+		Message string `json:"msg"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if result.Status != 0 {
+		return "", fmt.Errorf(result.Message)
+	}
+
+	fmt.Print("请输入验证码: ")
+	code, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+	code = strings.TrimSpace(code)
+
+	loginReqBody := map[string]string{
+		"phone": phone,
+		"code":  code,
+	}
+
+	resp, err = a.client.DoRequest(
+		http.MethodPost,
+		"https://as.hypergryph.com/user/auth/v2/token_by_phone_code",
+		loginReqBody,
+		map[string]string{"Content-Type": "application/json"},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	var loginResult models.LoginResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", err
+	}
+	if result.Status != 0 {
+		return "", fmt.Errorf(result.Message)
+	}
+	return loginResult.Data.Token, nil
+}
+
+func LoginByCode() string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("登录森空岛电脑官网后请访问这个网址: https://web-api.skland.com/account/info/hg")
+	fmt.Print("请输入获得的内容: ")
+
+	code, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("读取输入失败:", err)
+		return ""
+	}
+	code = strings.TrimSpace(code)
+
+	var data map[string]any
+	if err := json.Unmarshal([]byte(code), &data); err != nil {
+		return code // 返回原始输入
+	}
+
+	dataObj, ok := data["data"].(map[string]any)
+	if !ok {
+		return code // 返回原始输入
+	}
+
+	content, ok := dataObj["content"].(string)
+	if !ok {
+		return code // 返回原始输入
+	}
+
+	return content
+}
+
 func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 	grantCode, err := a.getGrantCode(token)
 	if err != nil {
 		return nil, err
 	}
 
-	reqBody := map[string]interface{}{
+	reqBody := map[string]any{
 		"code": grantCode,
 		"kind": 1,
 	}
