@@ -26,3 +26,5 @@ go.work
 *.yaml
 
 .idea
+
+token.txt
