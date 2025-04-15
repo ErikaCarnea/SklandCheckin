@@ -2,6 +2,7 @@ package api
 
 import (
 	"Skland/client"
+	"Skland/config"
 	"Skland/models"
 	"bufio"
 	"encoding/json"
@@ -23,7 +24,7 @@ func NewAuthAPI(c *client.HttpClient) *AuthAPI {
 	return &AuthAPI{client: c}
 }
 
-func (a *AuthAPI) LoginByPassword() (string, error) {
+func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
@@ -55,7 +56,7 @@ func (a *AuthAPI) LoginByPassword() (string, error) {
 		map[string]string{"Content-Type": "application/json"},
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -66,17 +67,23 @@ func (a *AuthAPI) LoginByPassword() (string, error) {
 
 	var result models.LoginResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if result.Status != 0 {
-		return "", fmt.Errorf(result.Message)
+		return nil, fmt.Errorf(result.Message)
 	}
+	config.SaveToken(result.Data.Token)
+	//return result.Data.Token, nil
 
-	return result.Data.Token, nil
+	credResult, err := a.GetCredByToken(result.Data.Token)
+	if err != nil {
+		log.Fatalf("获取凭证失败: %v", err)
+	}
+	return credResult, nil
 }
 
-func (a *AuthAPI) LoginByPhoneCode() (string, error) {
+func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
@@ -97,13 +104,13 @@ func (a *AuthAPI) LoginByPhoneCode() (string, error) {
 		map[string]string{"Content-Type": "application/json"},
 	)
 	if err != nil {
-		return "", fmt.Errorf("请求失败：%v", err)
+		return nil, fmt.Errorf("请求失败：%v", err)
 	}
 	defer resp.Body.Close()
 
 	// 检查HTTP状态码
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("请求失败，HTTP状态码：%d", resp.StatusCode)
+		return nil, fmt.Errorf("请求失败，HTTP状态码：%d", resp.StatusCode)
 	}
 
 	var result struct {
@@ -112,10 +119,10 @@ func (a *AuthAPI) LoginByPhoneCode() (string, error) {
 		Message string `json:"msg"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
+		return nil, err
 	}
 	if result.Status != 0 {
-		return "", fmt.Errorf(result.Message)
+		return nil, fmt.Errorf(result.Message)
 	}
 
 	fmt.Print("请输入验证码: ")
@@ -137,20 +144,26 @@ func (a *AuthAPI) LoginByPhoneCode() (string, error) {
 		map[string]string{"Content-Type": "application/json"},
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var loginResult models.LoginResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
+		return nil, err
 	}
 	if result.Status != 0 {
-		return "", fmt.Errorf(result.Message)
+		return nil, fmt.Errorf(result.Message)
 	}
-	return loginResult.Data.Token, nil
+	//return loginResult.Data.Token, nil
+	config.SaveToken(loginResult.Data.Token)
+	credResult, err := a.GetCredByToken(loginResult.Data.Token)
+	if err != nil {
+		log.Fatalf("获取凭证失败: %v", err)
+	}
+	return credResult, nil
 }
 
-func LoginByCode() string {
+func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("登录森空岛电脑官网后请访问这个网址: https://web-api.skland.com/account/info/hg")
 	fmt.Print("请输入获得的内容: ")
@@ -158,26 +171,31 @@ func LoginByCode() string {
 	code, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println("读取输入失败:", err)
-		return ""
+		return nil, fmt.Errorf("读取输入失败: %w", err)
 	}
 	code = strings.TrimSpace(code)
 
 	var data map[string]any
 	if err := json.Unmarshal([]byte(code), &data); err != nil {
-		return code // 返回原始输入
+		return nil, fmt.Errorf("JSON解析失败: %w (原始输入: %s)", err, code)
 	}
 
 	dataObj, ok := data["data"].(map[string]any)
 	if !ok {
-		return code // 返回原始输入
+		return nil, fmt.Errorf("无效的数据结构，缺少data字段 (原始输入: %s)", code)
 	}
 
 	content, ok := dataObj["content"].(string)
 	if !ok {
-		return code // 返回原始输入
+		return nil, fmt.Errorf("无效的数据结构，缺少content字段 (原始输入: %s)", code)
 	}
+	config.SaveToken(content)
 
-	return content
+	credResult, err := a.GetCredByToken(content)
+	if err != nil {
+		return nil, fmt.Errorf("获取凭证失败: %w", err)
+	}
+	return credResult, nil
 }
 
 func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
