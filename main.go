@@ -75,13 +75,13 @@ func waitForExit() {
 func tryAutoLogin(authAPI *api.AuthAPI, token string) (*models.CredResult, error) {
 	credResult, err := authAPI.GetCredByToken(token)
 	if err != nil {
-		log.Printf("自动登录失败: %v，删除无效token文件", err)
+		logrus.WithError(err).Error("自动登录失败，删除无效token文件")
 		if err := os.Remove(config.TokenFileName); err != nil {
-			log.Printf("删除token文件失败: %v", err)
+			logrus.WithError(err).Error("删除token文件失败")
 		}
 		return nil, err
 	}
-	log.Println("检测到有效token，自动登录成功")
+	logrus.Info("检测到有效token，自动登录成功")
 	return credResult, nil
 }
 
@@ -111,11 +111,12 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 	case 3:
 		credResult, err = authAPI.LoginByCode()
 	default:
-		log.Fatalf("无效的选项，请输入 1-3 之间的数字")
+		logrus.Error("无效的登录选项")
+		os.Exit(1)
 	}
 
 	if err != nil {
-		log.Printf("%v", err)
+		logrus.WithError(err).Error("登录流程失败")
 		waitForExit()
 		os.Exit(1)
 	}
@@ -136,12 +137,12 @@ func proceedWithCredential(ctx *CredentialContext) {
 		os.Exit(1)
 	}
 
-	// 打印玩家信息
-	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-		logrus.WithError(err).Error("获取玩家信息失败")
-		waitForExit()
-		os.Exit(1)
-	}
+	//// 打印玩家信息
+	//if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
+	//	logrus.WithError(err).Error("获取玩家信息失败")
+	//	waitForExit()
+	//	os.Exit(1)
+	//}
 
 	// 执行签到
 	// 并发执行签到

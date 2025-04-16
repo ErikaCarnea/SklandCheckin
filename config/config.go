@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"log"
 	"os"
 	"strings"
 )
@@ -34,7 +33,7 @@ func CheckSavedToken() (string, bool) {
 
 	tokenBytes, err := os.ReadFile(TokenFileName)
 	if err != nil {
-		log.Printf("读取token文件失败: %v", err)
+		logrus.WithError(err).Error("读取token文件失败")
 		return "", false
 	}
 	return strings.TrimSpace(string(tokenBytes)), true

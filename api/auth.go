@@ -88,89 +88,53 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 
 func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
+	logrus.WithField("action", "phone_code_login").Info("开始手机验证码登录流程")
+
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
-		return nil, fmt.Errorf("读取手机号失败: %w", err)
+		logrus.WithError(err).Error("读取手机号失败")
+		return nil, err
 	}
 	phone = strings.TrimSpace(phone)
 
-	reqBody := map[string]any{
-		"phone": phone,
-		"type":  2,
-	}
-
-	resp, err := a.client.DoRequest(
+	var sendCodeResult models.SendCodeResult
+	if err := a.client.ExecuteRequest(
 		http.MethodPost,
 		"https://as.hypergryph.com/general/v1/send_phone_code",
-		reqBody,
-		map[string]string{"Content-Type": "application/json"},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("请求失败：%v", err)
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Printf("关闭响应体失败: %v", closeErr)
-		}
-	}()
-
-	// 检查HTTP状态码
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("请求失败，HTTP状态码：%d", resp.StatusCode)
+		map[string]any{"phone": phone, "type": 2},
+		&sendCodeResult,
+	); err != nil {
+		return nil, fmt.Errorf("发送验证码失败: %w", err)
 	}
 
-	var result struct {
-		Status  int    `json:"status"`
-		Type    string `json:"type"`
-		Message string `json:"msg"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-	if result.Status != 0 {
-		return nil, fmt.Errorf(result.Message)
+	if sendCodeResult.GetCode() != 0 {
+		return nil, fmt.Errorf("API错误: %s", sendCodeResult.GetMessage())
 	}
 
 	fmt.Print("请输入验证码: ")
 	code, err := reader.ReadString('\n')
 	if err != nil {
-		return nil, fmt.Errorf("读取验证码失败: %w", err)
+		logrus.WithError(err).Error("读取验证码失败")
+		return nil, err
 	}
 	code = strings.TrimSpace(code)
 
-	loginReqBody := map[string]string{
-		"phone": phone,
-		"code":  code,
-	}
-
-	resp, err = a.client.DoRequest(
+	var loginResult models.LoginResult
+	if err := a.client.ExecuteRequest(
 		http.MethodPost,
 		"https://as.hypergryph.com/user/auth/v2/token_by_phone_code",
-		loginReqBody,
-		map[string]string{"Content-Type": "application/json"},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("登录请求失败: %w", err)
-	}
-
-	var loginResult models.LoginResult
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-	if result.Status != 0 {
-		return nil, fmt.Errorf(result.Message)
+		map[string]string{"phone": phone, "code": code},
+		&loginResult,
+	); err != nil {
+		return nil, fmt.Errorf("登录失败: %w", err)
 	}
 
 	if err = config.SaveToken(loginResult.Data.Token); err != nil {
-		return nil, fmt.Errorf(err.Error())
+		return nil, fmt.Errorf("保存Token失败: %w", err)
 	}
 
-	credResult, err := a.GetCredByToken(loginResult.Data.Token)
-	if err != nil {
-		return nil, fmt.Errorf("获取凭证失败: %v", err)
-	}
-	return credResult, nil
+	return a.GetCredByToken(loginResult.Data.Token)
 }
 
 func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
@@ -251,34 +215,14 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 }
 
 func (a *AuthAPI) getGrantCode(token string) (string, error) {
-	reqBody := map[string]any{
-		"appCode": AppCode,
-		"token":   token,
-		"type":    0,
-	}
-
-	resp, err := a.client.DoRequest(
+	var result models.GrantResult
+	if err := a.client.ExecuteRequest(
 		http.MethodPost,
 		"https://as.hypergryph.com/user/oauth2/v2/grant",
-		reqBody,
-		map[string]string{"Content-Type": "application/json"},
-	)
-	if err != nil {
+		map[string]any{"appCode": AppCode, "token": token, "type": 0},
+		&result,
+	); err != nil {
 		return "", err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(resp.Body)
-
-	var result models.GrantResult
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
-	}
-	if result.Status != 0 {
-		return "", fmt.Errorf(result.Message)
 	}
 	return result.Data.Code, nil
 }

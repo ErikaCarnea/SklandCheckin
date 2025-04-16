@@ -16,6 +16,14 @@ type GrantResult struct {
 	} `json:"data"`
 }
 
+func (g GrantResult) GetCode() int {
+	return g.Status
+}
+
+func (g GrantResult) GetMessage() string {
+	return g.Message
+}
+
 type CredResult struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -95,5 +103,18 @@ func (r *CredResult) GetCode() int {
 }
 
 func (r *CredResult) GetMessage() string {
+	return r.Message
+}
+
+type SendCodeResult struct {
+	Status  int    `json:"status"`
+	Message string `json:"msg"`
+}
+
+func (r *SendCodeResult) GetCode() int {
+	return r.Status
+}
+
+func (r *SendCodeResult) GetMessage() string {
 	return r.Message
 }

@@ -17,8 +17,8 @@ func NewAttendanceAPI(c client.HTTPClient) *AttendanceAPI {
 
 func (a *AttendanceAPI) SignAttendance(uid, gameId string) (*models.AttendanceResult, error) {
 	logEntry := logrus.WithFields(logrus.Fields{
-		"uid":    uid,
-		"gameId": gameId,
+		"uid":             uid,
+		"channelMasterId": gameId,
 	})
 
 	reqBody := models.AttendanceRequest{Uid: uid, GameId: gameId}
