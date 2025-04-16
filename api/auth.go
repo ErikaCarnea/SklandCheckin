@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
 	"io"
 	"log"
@@ -27,9 +28,15 @@ func NewAuthAPI(c client.HTTPClient) *AuthAPI {
 
 func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
+
+	// 记录关键操作
+	logrus.WithField("action", "password_login").Info("开始密码登录流程")
+
+	// 读取手机号
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
+		logrus.WithError(err).Error("读取手机号失败")
 		return nil, fmt.Errorf("读取手机号失败: %w", err)
 	}
 	phone = strings.TrimSpace(phone)
@@ -39,7 +46,8 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	if term.IsTerminal(int(os.Stdin.Fd())) {
 		passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
-			return nil, fmt.Errorf("读取密码失败（请确保在终端中运行程序）: %w", err)
+			logrus.WithError(err).Error("读取密码失败")
+			return nil, fmt.Errorf("读取密码失败: %w", err)
 		}
 		password = strings.TrimSpace(string(passwordBytes))
 		fmt.Println() // 换行
@@ -48,6 +56,7 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		fmt.Print("请输入密码（明文显示）: ")
 		passwordInput, err := reader.ReadString('\n')
 		if err != nil {
+			logrus.WithError(err).Error("读取密码失败")
 			return nil, fmt.Errorf("读取密码失败: %w", err)
 		}
 		password = strings.TrimSpace(passwordInput)
@@ -165,6 +174,8 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 }
 
 func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
+	logrus.Info("开始授权码登录流程")
+
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("登录森空岛电脑官网后请访问这个网址: https://web-api.skland.com/account/info/hg")
 	fmt.Print("请输入获得的内容: ")
@@ -182,6 +193,10 @@ func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 	}
 
 	if err := json.Unmarshal([]byte(code), &response); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"raw_input": code,
+			"error":     err.Error(),
+		}).Error("JSON解析失败")
 		return nil, fmt.Errorf("JSON解析失败: %w (原始输入: %s)", err, code)
 	}
 

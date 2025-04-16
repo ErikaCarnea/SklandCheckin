@@ -7,6 +7,7 @@ import (
 	"Skland/models"
 	"Skland/utils"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"sync"
@@ -22,10 +23,19 @@ type CredentialContext struct {
 }
 
 func main() {
-	// 初始化客户端
-	httpClient := client.NewClient()
+	//初始化日志配置
+	logrus.SetFormatter(&logrus.JSONFormatter{
+		FieldMap: logrus.FieldMap{
+			logrus.FieldKeyTime:  "timestamp",
+			logrus.FieldKeyLevel: "level",
+			logrus.FieldKeyMsg:   "message",
+		},
+	})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
 
-	// 初始化各API模块
+	// 初始化客户端和各API模块
+	httpClient := client.NewClient()
 	authAPI := api.NewAuthAPI(httpClient)
 	bindingAPI := api.NewBindingAPI(httpClient)
 	attendanceAPI := api.NewAttendanceAPI(httpClient)
@@ -121,14 +131,14 @@ func proceedWithCredential(ctx *CredentialContext) {
 	// 获取绑定列表
 	bindings, err := ctx.BindingAPI.GetBindingList()
 	if err != nil {
-		log.Printf("获取绑定列表失败: %v", err)
+		logrus.WithError(err).Error("获取绑定列表失败")
 		waitForExit()
 		os.Exit(1)
 	}
 
 	// 打印玩家信息
 	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-		log.Printf("获取绑定玩家数据失败: %v", err)
+		logrus.WithError(err).Error("获取玩家信息失败")
 		waitForExit()
 		os.Exit(1)
 	}
@@ -142,7 +152,6 @@ func proceedWithCredential(ctx *CredentialContext) {
 			defer wg.Done()
 			result, err := ctx.AttendanceAPI.SignAttendance(b.Uid, b.ChannelMasterId)
 			if err != nil {
-				log.Printf("签到失败：%v", err)
 				return
 			}
 

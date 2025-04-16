@@ -3,7 +3,7 @@ package api
 import (
 	"Skland/client"
 	"Skland/models"
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -16,6 +16,11 @@ func NewAttendanceAPI(c client.HTTPClient) *AttendanceAPI {
 }
 
 func (a *AttendanceAPI) SignAttendance(uid, gameId string) (*models.AttendanceResult, error) {
+	logEntry := logrus.WithFields(logrus.Fields{
+		"uid":    uid,
+		"gameId": gameId,
+	})
+
 	reqBody := models.AttendanceRequest{Uid: uid, GameId: gameId}
 	var result models.AttendanceResult
 
@@ -25,8 +30,10 @@ func (a *AttendanceAPI) SignAttendance(uid, gameId string) (*models.AttendanceRe
 		reqBody,
 		&result,
 	); err != nil {
-		return nil, fmt.Errorf("签到失败: %w", err)
+		logEntry.WithError(err).Error("签到失败")
+		return nil, err
 	}
 
+	logEntry.Info("签到成功")
 	return &result, nil
 }

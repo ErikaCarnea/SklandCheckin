@@ -5,6 +5,7 @@ import (
 	"Skland/models"
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"net/http"
@@ -42,6 +43,11 @@ func (p *PlayerApi) PrintAllPlayersInfo(bindings []models.Binding) error {
 }
 
 func (p *PlayerApi) fetchPlayerInfo(ctx context.Context, b models.Binding) error {
+	logEntry := logrus.WithFields(logrus.Fields{
+		"uid":    b.Uid,
+		"player": b.NickName,
+	})
+
 	// 检查上下文是否已取消
 	if err := ctx.Err(); err != nil {
 		return err
@@ -50,24 +56,26 @@ func (p *PlayerApi) fetchPlayerInfo(ctx context.Context, b models.Binding) error
 	urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/player/info?uid=%s", b.Uid)
 	headers, err := p.client.GetSignHeaders(urlStr, http.MethodGet, nil)
 	if err != nil {
-		return fmt.Errorf("获取签名头失败(UID:%s): %w", b.Uid, err)
+		logEntry.WithError(err).Error("获取签名头失败")
+		return err
 	}
 	headers["Content-Type"] = "application/json"
 
 	resp, err := p.client.DoRequest(http.MethodGet, urlStr, nil, headers)
 	if err != nil {
-		return fmt.Errorf("请求失败: %w", err)
+		logEntry.WithError(err).Error("请求失败")
+		return err
 	}
 	defer client.CloseResponse(resp)
 
 	body, err := client.ReadResponseBody(resp)
 	if err != nil {
-		return fmt.Errorf("读取响应失败(UID:%s): %v", b.Uid, err)
+		logEntry.WithError(err).Error("读取响应失败")
+		return err
 	}
 
-	content := string(body)
+	logEntry.Info("成功获取玩家信息")
 	fmt.Printf("=== 玩家 %s (%s) ===\n", b.NickName, b.Uid)
-	fmt.Println(content)
-	fmt.Println("========================")
+	fmt.Println(string(body))
 	return nil
 }

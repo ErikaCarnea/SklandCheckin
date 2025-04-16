@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"strings"
@@ -11,7 +12,11 @@ const TokenFileName = "token.txt"
 
 func SaveToken(token string) error {
 	if err := os.WriteFile(TokenFileName, []byte(token), 0600); err != nil {
-		return fmt.Errorf("保存Token到文件失败: %w", err)
+		logrus.WithFields(logrus.Fields{
+			"file":  TokenFileName,
+			"error": err.Error(),
+		}).Error("保存Token失败")
+		return fmt.Errorf("保存Token失败: %w", err)
 	}
 
 	fmt.Printf(

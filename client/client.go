@@ -11,8 +11,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -164,7 +164,7 @@ func (c *httpClient) parseResponse(resp *http.Response, target models.APIRespons
 func CloseResponse(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("关闭响应体失败: %v", err)
+			logrus.WithError(err).Error("关闭响应体失败")
 		}
 	}
 }
