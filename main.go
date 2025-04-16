@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 type CredentialContext struct {
@@ -49,6 +50,7 @@ func main() {
 	credResult := loginProcess(authAPI)
 	ctx.CredResult = credResult
 	proceedWithCredential(ctx)
+	time.Sleep(3000 * time.Millisecond)
 	waitForExit()
 }
 
