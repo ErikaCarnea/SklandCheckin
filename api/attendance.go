@@ -15,13 +15,12 @@ func NewAttendanceAPI(c client.HTTPClient) *AttendanceAPI {
 	return &AttendanceAPI{client: c}
 }
 
-func (a *AttendanceAPI) SignAttendance(uid, gameId string) (*models.AttendanceResult, error) {
+func (a *AttendanceAPI) SignAttendance(b models.Binding) (*models.AttendanceResult, error) {
 	logEntry := logrus.WithFields(logrus.Fields{
-		"uid":             uid,
-		"channelMasterId": gameId,
+		"account": b,
 	})
 
-	reqBody := models.AttendanceRequest{Uid: uid, GameId: gameId}
+	reqBody := models.AttendanceRequest{Uid: b.Uid, GameId: b.ChannelMasterId}
 	var result models.AttendanceResult
 
 	if err := a.client.ExecuteRequest(

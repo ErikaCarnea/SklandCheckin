@@ -137,7 +137,7 @@ func proceedWithCredential(ctx *CredentialContext) {
 		os.Exit(1)
 	}
 
-	//// 打印玩家信息
+	// 打印玩家信息
 	//if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
 	//	logrus.WithError(err).Error("获取玩家信息失败")
 	//	waitForExit()
@@ -151,7 +151,7 @@ func proceedWithCredential(ctx *CredentialContext) {
 		wg.Add(1)
 		go func(b models.Binding) {
 			defer wg.Done()
-			result, err := ctx.AttendanceAPI.SignAttendance(b.Uid, b.ChannelMasterId)
+			result, err := ctx.AttendanceAPI.SignAttendance(b)
 			if err != nil {
 				return
 			}

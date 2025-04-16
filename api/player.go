@@ -50,7 +50,8 @@ func (p *PlayerApi) fetchPlayerInfo(ctx context.Context, b models.Binding) error
 
 	// 检查上下文是否已取消
 	if err := ctx.Err(); err != nil {
-		return err
+		logEntry.WithError(err).Debug("上下文已取消，跳过请求")
+		return nil
 	}
 
 	urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/player/info?uid=%s", b.Uid)
