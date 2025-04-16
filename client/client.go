@@ -80,7 +80,11 @@ func (c *HttpClient) DoRequest(method, url string, body any, headers map[string]
 		req.Header.Set(k, v)
 	}
 
-	return c.client.Do(req)
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("请求失败: %w", err)
+	}
+	return resp, nil
 }
 
 func ReadResponseBody(resp *http.Response) ([]byte, error) {
@@ -163,11 +167,7 @@ func (c *HttpClient) ExecuteRequest(
 	if err != nil {
 		return fmt.Errorf("请求发送失败: %w", err)
 	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Printf("关闭响应体失败: %v", closeErr)
-		}
-	}()
+	defer CloseResponse(resp) // 统一关闭
 
 	// 3. 读取并解析响应
 	body, err := ReadResponseBody(resp)
@@ -185,4 +185,12 @@ func (c *HttpClient) ExecuteRequest(
 	}
 
 	return nil
+}
+
+func CloseResponse(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("关闭响应体失败: %v", err)
+		}
+	}
 }
