@@ -88,8 +88,8 @@ func tryAutoLogin(authAPI *api.AuthAPI, token string) (*models.CredResult, error
 func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 	// 显示登录选项
 	fmt.Println("请选择登录方式:")
-	fmt.Println("1. 密码登录")
-	fmt.Println("2. 手机验证码登录")
+	fmt.Println("1. 密码登录 (可能触发人机验证)")
+	fmt.Println("2. 手机验证码登录 (可能触发人机验证)")
 	fmt.Println("3. 授权码登录")
 	fmt.Print("请输入选项数字 (1-3): ")
 
