@@ -45,6 +45,47 @@ func NewClient() *HttpClient {
 	}
 }
 
+func CloseResponse(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("关闭响应体失败: %v", err)
+		}
+	}
+}
+
+func ReadResponseBody(resp *http.Response) ([]byte, error) {
+	var reader io.Reader
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		gzReader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("创建gzip读取器失败: %w", err)
+		}
+		defer func(gzReader *gzip.Reader) {
+			if err := gzReader.Close(); err != nil {
+				log.Printf("关闭gzip读取器失败: %v", err)
+			}
+		}(gzReader)
+		reader = gzReader
+	case "deflate":
+		flateReader := flate.NewReader(resp.Body)
+		defer func(flateReader io.ReadCloser) {
+			if err := flateReader.Close(); err != nil {
+				log.Printf("关闭deflate读取器失败: %v", err)
+			}
+		}(flateReader)
+		reader = flateReader
+	default:
+		reader = resp.Body
+	}
+
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("读取响应内容失败: %w", err)
+	}
+	return body, nil
+}
+
 func (c *HttpClient) SetCred(cred string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -87,39 +128,6 @@ func (c *HttpClient) DoRequest(method, url string, body any, headers map[string]
 	return resp, nil
 }
 
-func ReadResponseBody(resp *http.Response) ([]byte, error) {
-	var reader io.Reader
-	switch resp.Header.Get("Content-Encoding") {
-	case "gzip":
-		gzReader, err := gzip.NewReader(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("创建gzip读取器失败: %w", err)
-		}
-		defer func(gzReader *gzip.Reader) {
-			if err := gzReader.Close(); err != nil {
-				log.Printf("关闭gzip读取器失败: %v", err)
-			}
-		}(gzReader)
-		reader = gzReader
-	case "deflate":
-		flateReader := flate.NewReader(resp.Body)
-		defer func(flateReader io.ReadCloser) {
-			if err := flateReader.Close(); err != nil {
-				log.Printf("关闭deflate读取器失败: %v", err)
-			}
-		}(flateReader)
-		reader = flateReader
-	default:
-		reader = resp.Body
-	}
-
-	body, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, fmt.Errorf("读取响应内容失败: %w", err)
-	}
-	return body, nil
-}
-
 func (c *HttpClient) GetSignHeaders(urlStr, method string, body any) (map[string]string, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
@@ -151,10 +159,7 @@ func (c *HttpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	return headers, nil
 }
 
-func (c *HttpClient) ExecuteRequest(
-	method, urlStr string,
-	reqBody any,
-	respTarget models.APIResponse) error {
+func (c *HttpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.APIResponse) error {
 	// 1. 生成签名头
 	headers, err := c.GetSignHeaders(urlStr, method, reqBody)
 	if err != nil {
@@ -169,28 +174,22 @@ func (c *HttpClient) ExecuteRequest(
 	}
 	defer CloseResponse(resp) // 统一关闭
 
-	// 3. 读取并解析响应
+	return c.parseResponse(resp, respTarget)
+}
+
+func (c *HttpClient) parseResponse(resp *http.Response, target models.APIResponse) error {
 	body, err := ReadResponseBody(resp)
 	if err != nil {
 		return fmt.Errorf("读取响应失败: %w", err)
 	}
 
-	if err := json.Unmarshal(body, respTarget); err != nil {
-		return fmt.Errorf("解析响应失败: %w", err)
+	if err := json.Unmarshal(body, target); err != nil {
+		return fmt.Errorf("解析响应: %w", err)
 	}
 
-	// 4. 检查业务状态码
-	if code := respTarget.GetCode(); code != 0 {
-		return fmt.Errorf("API 返回错误: %s (code: %d)", respTarget.GetMessage(), code)
+	if code := target.GetCode(); code != 0 {
+		return fmt.Errorf("API 返回错误: %s (code: %d)", target.GetMessage(), code)
 	}
 
 	return nil
-}
-
-func CloseResponse(resp *http.Response) {
-	if resp != nil && resp.Body != nil {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("关闭响应体失败: %v", err)
-		}
-	}
 }

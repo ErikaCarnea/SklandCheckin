@@ -268,7 +268,7 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 }
 
 func (a *AuthAPI) getGrantCode(token string) (string, error) {
-	reqBody := map[string]interface{}{
+	reqBody := map[string]any{
 		"appCode": AppCode,
 		"token":   token,
 		"type":    0,
