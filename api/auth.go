@@ -55,7 +55,8 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		fmt.Println() // 换行
 	} else {
 		// 非终端环境回退到明文输入
-		fmt.Println("警告：当前环境不支持密码隐藏，请输入密码（明文显示）:")
+		log.Println("警告：当前环境不支持密码隐藏，密码将以明文显示！") // 使用 log 输出
+		fmt.Print("请输入密码（明文显示）: ")
 		passwordInput, err := reader.ReadString('\n')
 		if err != nil {
 			return nil, fmt.Errorf("读取密码失败: %w", err)
@@ -201,34 +202,30 @@ func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 
 	code, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("读取输入失败:", err)
 		return nil, fmt.Errorf("读取输入失败: %w", err)
 	}
 	code = strings.TrimSpace(code)
 
-	var data map[string]any
-	if err := json.Unmarshal([]byte(code), &data); err != nil {
+	// 定义严格的结构体
+	var response struct {
+		Data struct {
+			Content string `json:"content"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal([]byte(code), &response); err != nil {
 		return nil, fmt.Errorf("JSON解析失败: %w (原始输入: %s)", err, code)
 	}
 
-	dataObj, ok := data["data"].(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("无效的数据结构，缺少data字段 (原始输入: %s)", code)
-	}
-
-	content, ok := dataObj["content"].(string)
-	if !ok {
+	if response.Data.Content == "" {
 		return nil, fmt.Errorf("无效的数据结构，缺少content字段 (原始输入: %s)", code)
 	}
-	if err = config.SaveToken(content); err != nil {
-		return nil, fmt.Errorf(err.Error())
+
+	if err = config.SaveToken(response.Data.Content); err != nil {
+		return nil, fmt.Errorf("保存Token失败: %w", err)
 	}
 
-	credResult, err := a.GetCredByToken(content)
-	if err != nil {
-		return nil, fmt.Errorf("获取凭证失败: %w", err)
-	}
-	return credResult, nil
+	return a.GetCredByToken(response.Data.Content)
 }
 
 func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {

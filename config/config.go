@@ -10,7 +10,7 @@ import (
 const TokenFileName = "token.txt"
 
 func SaveToken(token string) error {
-	if err := os.WriteFile(TokenFileName, []byte(token), 0644); err != nil {
+	if err := os.WriteFile(TokenFileName, []byte(token), 0600); err != nil {
 		return fmt.Errorf("保存Token到文件失败: %w", err)
 	}
 
