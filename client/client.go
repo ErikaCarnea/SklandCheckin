@@ -5,6 +5,10 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/md5"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,15 +24,22 @@ const (
 	UserAgent      = "Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0"
 )
 
-type HttpClient struct {
+type httpClient struct {
 	client    *http.Client
 	headers   map[string]string
 	signToken string
 	mu        sync.Mutex
 }
 
-func NewClient() *HttpClient {
-	return &HttpClient{
+type signHeader struct {
+	Platform  string `json:"platform"`
+	Timestamp string `json:"timestamp"`
+	DId       string `json:"dId"`
+	VName     string `json:"vName"`
+}
+
+func NewClient() HTTPClient {
+	return &httpClient{
 		client: &http.Client{
 			Timeout: DefaultTimeout,
 			Transport: &http.Transport{
@@ -45,60 +56,19 @@ func NewClient() *HttpClient {
 	}
 }
 
-func CloseResponse(resp *http.Response) {
-	if resp != nil && resp.Body != nil {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("关闭响应体失败: %v", err)
-		}
-	}
-}
-
-func ReadResponseBody(resp *http.Response) ([]byte, error) {
-	var reader io.Reader
-	switch resp.Header.Get("Content-Encoding") {
-	case "gzip":
-		gzReader, err := gzip.NewReader(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("创建gzip读取器失败: %w", err)
-		}
-		defer func(gzReader *gzip.Reader) {
-			if err := gzReader.Close(); err != nil {
-				log.Printf("关闭gzip读取器失败: %v", err)
-			}
-		}(gzReader)
-		reader = gzReader
-	case "deflate":
-		flateReader := flate.NewReader(resp.Body)
-		defer func(flateReader io.ReadCloser) {
-			if err := flateReader.Close(); err != nil {
-				log.Printf("关闭deflate读取器失败: %v", err)
-			}
-		}(flateReader)
-		reader = flateReader
-	default:
-		reader = resp.Body
-	}
-
-	body, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, fmt.Errorf("读取响应内容失败: %w", err)
-	}
-	return body, nil
-}
-
-func (c *HttpClient) SetCred(cred string) {
+func (c *httpClient) SetCred(cred string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.headers["cred"] = cred
 }
 
-func (c *HttpClient) SetSignToken(token string) {
+func (c *httpClient) SetSignToken(token string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.signToken = token
 }
 
-func (c *HttpClient) DoRequest(method, url string, body any, headers map[string]string) (*http.Response, error) {
+func (c *httpClient) DoRequest(method, url string, body any, headers map[string]string) (*http.Response, error) {
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -121,14 +91,10 @@ func (c *HttpClient) DoRequest(method, url string, body any, headers map[string]
 		req.Header.Set(k, v)
 	}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("请求失败: %w", err)
-	}
-	return resp, nil
+	return c.client.Do(req)
 }
 
-func (c *HttpClient) GetSignHeaders(urlStr, method string, body any) (map[string]string, error) {
+func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string]string, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -149,6 +115,7 @@ func (c *HttpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	if err != nil {
 		return nil, err
 	}
+
 	headers := map[string]string{
 		"sign": sign,
 	}
@@ -159,7 +126,7 @@ func (c *HttpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	return headers, nil
 }
 
-func (c *HttpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.APIResponse) error {
+func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.APIResponse) error {
 	// 1. 生成签名头
 	headers, err := c.GetSignHeaders(urlStr, method, reqBody)
 	if err != nil {
@@ -177,7 +144,7 @@ func (c *HttpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarg
 	return c.parseResponse(resp, respTarget)
 }
 
-func (c *HttpClient) parseResponse(resp *http.Response, target models.APIResponse) error {
+func (c *httpClient) parseResponse(resp *http.Response, target models.APIResponse) error {
 	body, err := ReadResponseBody(resp)
 	if err != nil {
 		return fmt.Errorf("读取响应失败: %w", err)
@@ -192,4 +159,63 @@ func (c *HttpClient) parseResponse(resp *http.Response, target models.APIRespons
 	}
 
 	return nil
+}
+
+func CloseResponse(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("关闭响应体失败: %v", err)
+		}
+	}
+}
+
+func ReadResponseBody(resp *http.Response) ([]byte, error) {
+	var reader io.Reader
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		gzReader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("创建gzip读取器失败: %w", err)
+		}
+		defer gzReader.Close()
+		reader = gzReader
+	case "deflate":
+		flateReader := flate.NewReader(resp.Body)
+		defer flateReader.Close()
+		reader = flateReader
+	default:
+		reader = resp.Body
+	}
+
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("读取响应内容失败: %w", err)
+	}
+	return body, nil
+}
+
+func (c *httpClient) generateSignature(path, bodyOrQuery string) (string, map[string]string, error) {
+	timestamp := fmt.Sprintf("%d", time.Now().Unix()-2)
+	header := signHeader{
+		Timestamp: timestamp,
+	}
+
+	headerJson, err := json.Marshal(header)
+	if err != nil {
+		return "", nil, err
+	}
+	sStr := fmt.Sprintf("%s%s%s%s", path, bodyOrQuery, timestamp, string(headerJson))
+
+	h := hmac.New(sha256.New, []byte(c.signToken))
+	h.Write([]byte(sStr))
+	sha := hex.EncodeToString(h.Sum(nil))
+
+	md5Hash := md5.Sum([]byte(sha))
+	sign := hex.EncodeToString(md5Hash[:])
+
+	headerCa := map[string]string{
+		"timestamp": header.Timestamp,
+	}
+
+	return sign, headerCa, nil
 }

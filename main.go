@@ -14,7 +14,7 @@ import (
 )
 
 type CredentialContext struct {
-	HttpClient    *client.HttpClient
+	HttpClient    client.HTTPClient
 	BindingAPI    *api.BindingAPI
 	AttendanceAPI *api.AttendanceAPI
 	PlayerAPI     *api.PlayerApi

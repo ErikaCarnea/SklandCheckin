@@ -24,7 +24,6 @@ func (p *PlayerApi) PrintAllPlayersInfo(bindings []models.Binding) error {
 
 	for _, binding := range bindings {
 		b := binding
-
 		if err := sem.Acquire(ctx, 1); err != nil {
 			return fmt.Errorf("获取信号量失败: %w", err)
 		}

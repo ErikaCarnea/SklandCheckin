@@ -27,8 +27,6 @@ func NewAuthAPI(c client.HTTPClient) *AuthAPI {
 
 func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
-
-	// 读取手机号
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
@@ -36,17 +34,9 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	}
 	phone = strings.TrimSpace(phone)
 
-	// 读取密码
 	var password string
 	fmt.Print("请输入密码: ")
-	//password, err := reader.ReadString('\n')
-	//if err != nil {
-	//	return nil, fmt.Errorf("读取密码失败: %w", err)
-	//}
-	//password = strings.TrimSpace(password)
-	// 检测是否在真正的终端中运行
 	if term.IsTerminal(int(os.Stdin.Fd())) {
-		// 支持密码隐藏
 		passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
 			return nil, fmt.Errorf("读取密码失败（请确保在终端中运行程序）: %w", err)
@@ -54,7 +44,6 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		password = strings.TrimSpace(string(passwordBytes))
 		fmt.Println() // 换行
 	} else {
-		// 非终端环境回退到明文输入
 		log.Println("警告：当前环境不支持密码隐藏，密码将以明文显示！") // 使用 log 输出
 		fmt.Print("请输入密码（明文显示）: ")
 		passwordInput, err := reader.ReadString('\n')
@@ -72,40 +61,20 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		"phone":    phone,
 		"password": password,
 	}
-
-	resp, err := a.client.DoRequest(
+	var loginResult models.LoginResult
+	if err := a.client.ExecuteRequest(
 		http.MethodPost,
 		"https://as.hypergryph.com/user/auth/v1/token_by_phone_password",
 		reqBody,
-		map[string]string{"Content-Type": "application/json"},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("登录请求失败: %w", err)
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Printf("关闭响应体失败: %v", closeErr)
-		}
-	}()
-
-	var result models.LoginResult
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("解析登录响应失败: %w", err)
+		&loginResult,
+	); err != nil {
+		return nil, fmt.Errorf("登录失败: %w", err)
 	}
 
-	if result.Status != 0 {
-		return nil, fmt.Errorf("%s", result.Message)
+	if err := config.SaveToken(loginResult.Data.Token); err != nil {
+		return nil, fmt.Errorf("保存Token失败: %w", err)
 	}
-
-	if err = config.SaveToken(result.Data.Token); err != nil {
-		return nil, fmt.Errorf(err.Error())
-	}
-
-	credResult, err := a.GetCredByToken(result.Data.Token)
-	if err != nil {
-		return nil, fmt.Errorf("获取凭证失败: %w", err)
-	}
-	return credResult, nil
+	return a.GetCredByToken(loginResult.Data.Token)
 }
 
 func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
@@ -206,7 +175,6 @@ func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 	}
 	code = strings.TrimSpace(code)
 
-	// 定义严格的结构体
 	var response struct {
 		Data struct {
 			Content string `json:"content"`
