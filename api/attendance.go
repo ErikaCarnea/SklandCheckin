@@ -8,10 +8,10 @@ import (
 )
 
 type AttendanceAPI struct {
-	client *client.HttpClient
+	client client.HTTPClient
 }
 
-func NewAttendanceAPI(c *client.HttpClient) *AttendanceAPI {
+func NewAttendanceAPI(c client.HTTPClient) *AttendanceAPI {
 	return &AttendanceAPI{client: c}
 }
 
