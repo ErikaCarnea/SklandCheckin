@@ -1,22 +1,5 @@
 package models
 
-import "gopkg.in/yaml.v3"
-
-type QuotedString string
-
-func (s QuotedString) MarshalYAML() (interface{}, error) {
-	return &yaml.Node{
-		Kind:  yaml.ScalarNode,
-		Value: string(s),
-		Style: yaml.DoubleQuotedStyle,
-	}, nil
-}
-
-type AccountInfo struct {
-	Phone    string       `yaml:"phone"`
-	Password QuotedString `yaml:"password"`
-}
-
 type LoginResult struct {
 	Status  int    `json:"status"`
 	Message string `json:"msg"`
