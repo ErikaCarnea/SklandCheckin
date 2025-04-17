@@ -118,3 +118,16 @@ func (r *SendCodeResult) GetCode() int {
 func (r *SendCodeResult) GetMessage() string {
 	return r.Message
 }
+
+type CheckinRequest struct {
+	GameID string `json:"gameId"`
+}
+
+type CheckinResponse struct {
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+func (r CheckinResponse) GetCode() int       { return r.Code }
+func (r CheckinResponse) GetMessage() string { return r.Message }

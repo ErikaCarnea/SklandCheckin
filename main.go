@@ -40,6 +40,7 @@ func main() {
 	bindingAPI := api.NewBindingAPI(httpClient)
 	attendanceAPI := api.NewAttendanceAPI(httpClient)
 	playerAPI := api.NewPlayerAPI(httpClient)
+	checkinAPI := api.NewCheckinAPI(httpClient)
 
 	ctx := &CredentialContext{
 		HttpClient:    httpClient,
@@ -52,6 +53,7 @@ func main() {
 		if credResult, err := tryAutoLogin(authAPI, token); err == nil {
 			ctx.CredResult = credResult
 			proceedWithCredential(ctx)
+			runCheckinTasks(checkinAPI)
 			waitForExit()
 			return
 		}
@@ -60,6 +62,7 @@ func main() {
 	credResult := loginProcess(authAPI)
 	ctx.CredResult = credResult
 	proceedWithCredential(ctx)
+	runCheckinTasks(checkinAPI)
 	time.Sleep(3000 * time.Millisecond)
 	waitForExit()
 }
@@ -164,5 +167,26 @@ func proceedWithCredential(ctx *CredentialContext) {
 		}(binding)
 	}
 	wg.Wait()
+}
 
+func runCheckinTasks(a *api.CheckinAPI) {
+	var wg sync.WaitGroup
+	for gameID := range api.SklandBoard {
+		wg.Add(1)
+		time.Sleep(2 * time.Second)
+		logEntry := logrus.WithFields(logrus.Fields{
+			"gameID":   gameID,
+			"gameName": api.SklandBoard[gameID],
+		})
+		go func(id int) {
+			defer wg.Done()
+			_, err := a.Checkin(id)
+			if err != nil {
+				logEntry.WithError(err).Error("检票失败")
+				return
+			}
+			logEntry.Info("检票成功")
+		}(gameID)
+	}
+	wg.Wait()
 }
