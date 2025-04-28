@@ -7,10 +7,10 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -30,33 +30,30 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
 
 	// 记录关键操作
-	logrus.WithField("action", "password_login").Info("开始密码登录流程")
+	log.Info().Str("action", "password_login").Msg("开始密码登录流程")
 
 	// 读取手机号
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
-		logrus.WithError(err).Error("读取手机号失败")
 		return nil, fmt.Errorf("读取手机号失败: %w", err)
 	}
 	phone = strings.TrimSpace(phone)
 
 	var password string
-	fmt.Print("请输入密码: ")
 	if term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Print("请输入密码: ")
 		passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
-			logrus.WithError(err).Error("读取密码失败")
 			return nil, fmt.Errorf("读取密码失败: %w", err)
 		}
 		password = strings.TrimSpace(string(passwordBytes))
 		fmt.Println() // 换行
 	} else {
-		log.Println("警告：当前环境不支持密码隐藏，密码将以明文显示！") // 使用 log 输出
+		log.Warn().Msg("警告：当前环境不支持密码隐藏，密码将以明文显示！") // 使用 log 输出
 		fmt.Print("请输入密码（明文显示）: ")
 		passwordInput, err := reader.ReadString('\n')
 		if err != nil {
-			logrus.WithError(err).Error("读取密码失败")
 			return nil, fmt.Errorf("读取密码失败: %w", err)
 		}
 		password = strings.TrimSpace(passwordInput)
@@ -77,11 +74,11 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		reqBody,
 		&loginResult,
 	); err != nil {
-		return nil, fmt.Errorf("登录失败: %w", err)
+		return nil, err
 	}
 
 	if err := config.SaveToken(loginResult.Data.Token); err != nil {
-		return nil, fmt.Errorf("保存Token失败: %w", err)
+		log.Error().Err(err).Msg("保存Token失败")
 	}
 	return a.GetCredByToken(loginResult.Data.Token)
 }

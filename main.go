@@ -6,11 +6,13 @@ import (
 	"Skland/config"
 	"Skland/models"
 	"Skland/utils"
+	"bufio"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/sirupsen/logrus"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -97,34 +99,45 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 	fmt.Println("1. 密码登录 (可能触发人机验证)")
 	fmt.Println("2. 手机验证码登录 (可能触发人机验证)")
 	fmt.Println("3. 授权码登录")
-	fmt.Print("请输入选项数字 (1-3): ")
-
-	var choice int
-	if _, err := fmt.Scanln(&choice); err != nil {
-		log.Fatal().Err(err).Msgf("输入读取失败: %v", err)
-	}
+	scanner := bufio.NewScanner(os.Stdin)
 	var (
+		choice     int
 		credResult *models.CredResult
 		err        error
 	)
+	for {
+		fmt.Print("请输入选项数字 (1-3): ")
+		//if _, err := fmt.Scanln(&choice); err != nil {
+		//	log.Error().Err(err).Msg("输入读取失败")
+		//	continue
+		//}
+		scanner.Scan()
+		input := strings.TrimSpace(scanner.Text())
+		if input == "" {
+			log.Error().Msg("输入不能为空，请重新输入")
+			continue
+		}
+		if choice, err = strconv.Atoi(input); err != nil {
+			log.Error().Msg("请输入有效的数字")
+			continue
+		}
 
-	// 登录流程
-	switch choice {
-	case 1:
-		credResult, err = authAPI.LoginByPassword()
-	case 2:
-		credResult, err = authAPI.LoginByPhoneCode()
-	case 3:
-		credResult, err = authAPI.LoginByCode()
-	default:
-		logrus.Error("无效的登录选项")
-		os.Exit(1)
+		switch choice {
+		case 1:
+			credResult, err = authAPI.LoginByPassword()
+		case 2:
+			credResult, err = authAPI.LoginByPhoneCode()
+		case 3:
+			credResult, err = authAPI.LoginByCode()
+		default:
+			log.Warn().Msg("无效的登录选项，请重新输入")
+			continue
+		}
+		break
 	}
 
 	if err != nil {
-		logrus.WithError(err).Error("登录流程失败")
-		waitForExit()
-		os.Exit(1)
+		log.Fatal().Err(err).Msg("登录流程失败")
 	}
 	return credResult
 

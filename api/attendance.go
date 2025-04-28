@@ -16,10 +16,6 @@ func NewAttendanceAPI(c client.HTTPClient) *AttendanceAPI {
 }
 
 func (a *AttendanceAPI) SignAttendance(b models.Binding) (*models.AttendanceResult, error) {
-	//logEntry := logrus.WithFields(logrus.Fields{
-	//	"account": b,
-	//})
-
 	reqBody := models.AttendanceRequest{Uid: b.Uid, GameId: b.ChannelMasterId}
 	var result models.AttendanceResult
 
@@ -29,12 +25,9 @@ func (a *AttendanceAPI) SignAttendance(b models.Binding) (*models.AttendanceResu
 		reqBody,
 		&result,
 	); err != nil {
-		//logEntry.WithError(err).Error("签到失败")
 		return nil, fmt.Errorf("account: %v | %w",
 			b.ToString(),
 			err)
 	}
-
-	//logEntry.Info("签到成功")
 	return &result, nil
 }
