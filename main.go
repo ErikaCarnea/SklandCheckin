@@ -26,23 +26,23 @@ type CredentialContext struct {
 }
 
 func main() {
-	//初始化日志配置
-	//logrus.SetFormatter(&logrus.JSONFormatter{
-	//	FieldMap: logrus.FieldMap{
-	//		logrus.FieldKeyTime:  "timestamp",
-	//		logrus.FieldKeyLevel: "level",
-	//		logrus.FieldKeyMsg:   "message",
-	//	},
-	//})
-	//logrus.SetOutput(os.Stdout)
-	//logrus.SetLevel(logrus.InfoLevel)
-
+	// 初始化日志配置
 	zerolog.TimestampFieldName = "timestamp"
 	zerolog.LevelFieldName = "level"
 	zerolog.MessageFieldName = "message"
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout}
 	log.Logger = zerolog.New(consoleWriter).With().Timestamp().Logger()
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	// 检测今日是否已经运行过
+	if utils.HasRunToday() {
+		log.Info().Msg("今日已经运行过，程序退出")
+		os.Exit(0)
+	}
+	// 创建标记文件
+	if err := utils.MarkRun(); err != nil {
+		log.Error().Err(err).Msg("无法创建运行标记文件，程序继续执行")
+	}
 
 	// 初始化客户端和各API模块
 	httpClient := client.NewClient()
@@ -161,11 +161,11 @@ func proceedWithCredential(ctx *CredentialContext) {
 	}
 
 	// 打印玩家信息
-	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-		log.Error().Err(err).Msg("获取玩家信息失败")
-		waitForExit()
-		os.Exit(1)
-	}
+	//if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
+	//	log.Error().Err(err).Msg("获取玩家信息失败")
+	//	waitForExit()
+	//	os.Exit(1)
+	//}
 
 	// 执行签到
 	// 并发执行签到
@@ -183,10 +183,11 @@ func proceedWithCredential(ctx *CredentialContext) {
 				b.ChannelName,
 				b.NickName,
 				utils.FormatAttendanceResult(result))
-			//fmt.Printf("[%s] (%s) %s\n",
-			//	b.ChannelName,
-			//	b.NickName,
-			//	utils.FormatAttendanceResult(result))
+			fmt.Println("=============================================")
+			log.Info().Msgf("[%s] (%s) %s\n",
+				b.ChannelName,
+				b.NickName,
+				utils.FormatAttendanceResult(result))
 		}(binding)
 	}
 	wg.Wait()
