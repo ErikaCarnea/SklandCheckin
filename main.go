@@ -7,8 +7,9 @@ import (
 	"Skland/models"
 	"Skland/utils"
 	"fmt"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/sirupsen/logrus"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -24,15 +25,22 @@ type CredentialContext struct {
 
 func main() {
 	//初始化日志配置
-	logrus.SetFormatter(&logrus.JSONFormatter{
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime:  "timestamp",
-			logrus.FieldKeyLevel: "level",
-			logrus.FieldKeyMsg:   "message",
-		},
-	})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.InfoLevel)
+	//logrus.SetFormatter(&logrus.JSONFormatter{
+	//	FieldMap: logrus.FieldMap{
+	//		logrus.FieldKeyTime:  "timestamp",
+	//		logrus.FieldKeyLevel: "level",
+	//		logrus.FieldKeyMsg:   "message",
+	//	},
+	//})
+	//logrus.SetOutput(os.Stdout)
+	//logrus.SetLevel(logrus.InfoLevel)
+
+	zerolog.TimestampFieldName = "timestamp"
+	zerolog.LevelFieldName = "level"
+	zerolog.MessageFieldName = "message"
+	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout}
+	log.Logger = zerolog.New(consoleWriter).With().Timestamp().Logger()
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	// 初始化客户端和各API模块
 	httpClient := client.NewClient()
@@ -50,13 +58,12 @@ func main() {
 	}
 
 	if token, exists := config.CheckSavedToken(); exists {
-		if credResult, err := tryAutoLogin(authAPI, token); err == nil {
-			ctx.CredResult = credResult
-			proceedWithCredential(ctx)
-			runCheckinTasks(checkinAPI)
-			waitForExit()
-			return
-		}
+		credResult := tryAutoLogin(authAPI, token)
+		ctx.CredResult = credResult
+		proceedWithCredential(ctx)
+		runCheckinTasks(checkinAPI)
+		waitForExit()
+		return
 	}
 
 	credResult := loginProcess(authAPI)
@@ -69,23 +76,19 @@ func main() {
 
 func waitForExit() {
 	fmt.Println("\n签到执行完毕，按回车键退出程序...")
-	_, err := fmt.Scanln()
-	if err != nil {
-		return
-	}
+	_, _ = fmt.Scanln()
 }
 
-func tryAutoLogin(authAPI *api.AuthAPI, token string) (*models.CredResult, error) {
+func tryAutoLogin(authAPI *api.AuthAPI, token string) *models.CredResult {
 	credResult, err := authAPI.GetCredByToken(token)
 	if err != nil {
-		logrus.WithError(err).Error("自动登录失败，删除无效token文件")
+		log.Error().Err(err).Msg("自动登录失败，删除无效token文件")
 		if err := os.Remove(config.TokenFileName); err != nil {
-			logrus.WithError(err).Error("删除token文件失败")
+			log.Error().Err(err).Msg("删除token文件失败")
 		}
-		return nil, err
 	}
-	logrus.Info("检测到有效token，自动登录成功")
-	return credResult, nil
+	log.Info().Msg("检测到有效token，自动登录成功")
+	return credResult
 }
 
 func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
@@ -98,7 +101,7 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 
 	var choice int
 	if _, err := fmt.Scanln(&choice); err != nil {
-		log.Fatalf("输入读取失败: %v", err)
+		log.Fatal().Err(err).Msgf("输入读取失败: %v", err)
 	}
 	var (
 		credResult *models.CredResult
@@ -135,14 +138,14 @@ func proceedWithCredential(ctx *CredentialContext) {
 	// 获取绑定列表
 	bindings, err := ctx.BindingAPI.GetBindingList()
 	if err != nil {
-		logrus.WithError(err).Error("获取绑定列表失败")
+		log.Error().Err(err).Msg("获取绑定列表失败")
 		waitForExit()
 		os.Exit(1)
 	}
 
 	// 打印玩家信息
 	//if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-	//	logrus.WithError(err).Error("获取玩家信息失败")
+	//	log.Error().Err(err).Msg("获取玩家信息失败")
 	//	waitForExit()
 	//	os.Exit(1)
 	//}
@@ -156,14 +159,17 @@ func proceedWithCredential(ctx *CredentialContext) {
 			defer wg.Done()
 			result, err := ctx.AttendanceAPI.SignAttendance(b)
 			if err != nil {
+				log.Error().Err(err).Msg("签到失败")
 				return
 			}
-
-			fmt.Printf("[%s] (%s) %s\n",
+			log.Info().Interface("result", result).Msgf("[%s] (%s) %s\n",
 				b.ChannelName,
 				b.NickName,
-				utils.FormatAttendanceResult(result),
-			)
+				utils.FormatAttendanceResult(result))
+			//fmt.Printf("[%s] (%s) %s\n",
+			//	b.ChannelName,
+			//	b.NickName,
+			//	utils.FormatAttendanceResult(result))
 		}(binding)
 	}
 	wg.Wait()
@@ -174,18 +180,15 @@ func runCheckinTasks(a *api.CheckinAPI) {
 	for gameID := range api.SklandBoard {
 		wg.Add(1)
 		time.Sleep(2 * time.Second)
-		logEntry := logrus.WithFields(logrus.Fields{
-			"gameID":   gameID,
-			"gameName": api.SklandBoard[gameID],
-		})
+		logger := log.With().Int("gameID", gameID).Str("gameName", api.SklandBoard[gameID]).Logger()
 		go func(id int) {
 			defer wg.Done()
 			_, err := a.Checkin(id)
 			if err != nil {
-				logEntry.WithError(err).Error("检票失败")
+				logger.Error().Err(err).Msg("检票失败")
 				return
 			}
-			logEntry.Info("检票成功")
+			logger.Info().Msg("检票成功")
 		}(gameID)
 	}
 	wg.Wait()

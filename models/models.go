@@ -1,5 +1,7 @@
 package models
 
+import "fmt"
+
 type LoginResult struct {
 	Status  int    `json:"status"`
 	Message string `json:"msg"`
@@ -39,6 +41,10 @@ type Binding struct {
 	ChannelMasterId string `json:"channelMasterId"`
 	ChannelName     string `json:"channelName"`
 	NickName        string `json:"nickName"`
+}
+
+func (b Binding) ToString() string {
+	return fmt.Sprintf("[%s] UID:%s %s", b.ChannelName, b.Uid, b.NickName)
 }
 
 type BindingResult struct {

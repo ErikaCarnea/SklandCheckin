@@ -11,7 +11,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"net/url"
@@ -151,7 +151,7 @@ func (c *httpClient) parseResponse(resp *http.Response, target models.APIRespons
 	}
 
 	if err := json.Unmarshal(body, target); err != nil {
-		return fmt.Errorf("解析响应: %w", err)
+		return fmt.Errorf("解析响应失败: %w", err)
 	}
 
 	if code := target.GetCode(); code != 0 {
@@ -164,7 +164,8 @@ func (c *httpClient) parseResponse(resp *http.Response, target models.APIRespons
 func CloseResponse(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
-			logrus.WithError(err).Error("关闭响应体失败")
+			//logrus.WithError(err).Error("关闭响应体失败")
+			log.Error().Err(err).Msg("关闭响应体失败")
 		}
 	}
 }
