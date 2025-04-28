@@ -3,7 +3,6 @@ package api
 import (
 	"Skland/client"
 	"Skland/models"
-	"fmt"
 	"net/http"
 )
 
@@ -23,7 +22,7 @@ func (b *BindingAPI) GetBindingList() ([]models.Binding, error) {
 		nil,
 		&result,
 	); err != nil {
-		return nil, fmt.Errorf("获取绑定列表失败: %w", err)
+		return nil, err
 	}
 
 	var bindings []models.Binding

@@ -99,6 +99,7 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 	fmt.Println("1. 密码登录 (可能触发人机验证)")
 	fmt.Println("2. 手机验证码登录 (可能触发人机验证)")
 	fmt.Println("3. 授权码登录")
+	fmt.Println("0. 输入\"0\"退出")
 	scanner := bufio.NewScanner(os.Stdin)
 	var (
 		choice     int
@@ -106,7 +107,7 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 		err        error
 	)
 	for {
-		fmt.Print("请输入选项数字 (1-3): ")
+		fmt.Print("请输入选项: ")
 		//if _, err := fmt.Scanln(&choice); err != nil {
 		//	log.Error().Err(err).Msg("输入读取失败")
 		//	continue
@@ -129,15 +130,18 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 			credResult, err = authAPI.LoginByPhoneCode()
 		case 3:
 			credResult, err = authAPI.LoginByCode()
+		case 0:
+			os.Exit(1)
 		default:
 			log.Warn().Msg("无效的登录选项，请重新输入")
 			continue
 		}
-		break
-	}
+		if err != nil {
+			log.Error().Err(err).Msg("登录流程失败,请重新尝试")
+		} else {
+			break
+		}
 
-	if err != nil {
-		log.Fatal().Err(err).Msg("登录流程失败")
 	}
 	return credResult
 
@@ -157,11 +161,11 @@ func proceedWithCredential(ctx *CredentialContext) {
 	}
 
 	// 打印玩家信息
-	//if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-	//	log.Error().Err(err).Msg("获取玩家信息失败")
-	//	waitForExit()
-	//	os.Exit(1)
-	//}
+	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
+		log.Error().Err(err).Msg("获取玩家信息失败")
+		waitForExit()
+		os.Exit(1)
+	}
 
 	// 执行签到
 	// 并发执行签到

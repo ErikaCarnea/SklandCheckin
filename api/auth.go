@@ -8,9 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -29,7 +27,6 @@ func NewAuthAPI(c client.HTTPClient) *AuthAPI {
 func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
 
-	// 记录关键操作
 	log.Info().Str("action", "password_login").Msg("开始密码登录流程")
 
 	// 读取手机号
@@ -85,13 +82,12 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 
 func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	reader := bufio.NewReader(os.Stdin)
-	logrus.WithField("action", "phone_code_login").Info("开始手机验证码登录流程")
+	log.Info().Str("action", "phone_code_login").Msg("开始手机验证码登录流程")
 
 	fmt.Print("请输入手机号: ")
 	phone, err := reader.ReadString('\n')
 	if err != nil {
-		logrus.WithError(err).Error("读取手机号失败")
-		return nil, err
+		return nil, fmt.Errorf("读取手机号失败: %w", err)
 	}
 	phone = strings.TrimSpace(phone)
 
@@ -112,8 +108,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	fmt.Print("请输入验证码: ")
 	code, err := reader.ReadString('\n')
 	if err != nil {
-		logrus.WithError(err).Error("读取验证码失败")
-		return nil, err
+		return nil, fmt.Errorf("读取验证码失败: %w", err)
 	}
 	code = strings.TrimSpace(code)
 
@@ -124,26 +119,25 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		map[string]string{"phone": phone, "code": code},
 		&loginResult,
 	); err != nil {
-		return nil, fmt.Errorf("登录失败: %w", err)
+		return nil, err
 	}
 
 	if err = config.SaveToken(loginResult.Data.Token); err != nil {
-		return nil, fmt.Errorf("保存Token失败: %w", err)
+		log.Error().Err(err).Msg("保存Token失败")
 	}
 
 	return a.GetCredByToken(loginResult.Data.Token)
 }
 
 func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
-	logrus.Info("开始授权码登录流程")
-
+	log.Info().Str("action", "token_login").Msg("开始授权码登录流程")
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("登录森空岛电脑官网后请访问这个网址: https://web-api.skland.com/account/info/hg")
 	fmt.Print("请输入获得的内容: ")
 
 	code, err := reader.ReadString('\n')
 	if err != nil {
-		return nil, fmt.Errorf("读取输入失败: %w", err)
+		return nil, fmt.Errorf("token读取失败: %w", err)
 	}
 	code = strings.TrimSpace(code)
 
@@ -154,15 +148,11 @@ func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 	}
 
 	if err := json.Unmarshal([]byte(code), &response); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"raw_input": code,
-			"error":     err.Error(),
-		}).Error("JSON解析失败")
-		return nil, fmt.Errorf("JSON解析失败: %w (原始输入: %s)", err, code)
+		return nil, fmt.Errorf("JSON解析失败: %w", err)
 	}
 
 	if response.Data.Content == "" {
-		return nil, fmt.Errorf("无效的数据结构，缺少content字段 (原始输入: %s)", code)
+		return nil, fmt.Errorf("无效的数据结构，缺少content字段")
 	}
 
 	if err = config.SaveToken(response.Data.Content); err != nil {
@@ -192,12 +182,7 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 
 	var credResult models.CredResult
 	if err := json.NewDecoder(resp.Body).Decode(&credResult); err != nil {
@@ -205,7 +190,7 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 	}
 
 	if credResult.Code != 0 {
-		return nil, fmt.Errorf(credResult.Message)
+		return nil, fmt.Errorf(credResult.GetMessage())
 	}
 
 	return &credResult, nil
