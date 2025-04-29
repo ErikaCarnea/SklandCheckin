@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"os"
 	"strings"
 )
@@ -11,11 +11,7 @@ const TokenFileName = "token.txt"
 
 func SaveToken(token string) error {
 	if err := os.WriteFile(TokenFileName, []byte(token), 0600); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"file":  TokenFileName,
-			"error": err.Error(),
-		}).Error("保存Token失败")
-		return fmt.Errorf("保存Token失败: %w", err)
+		return err
 	}
 
 	fmt.Printf(
@@ -33,7 +29,7 @@ func CheckSavedToken() (string, bool) {
 
 	tokenBytes, err := os.ReadFile(TokenFileName)
 	if err != nil {
-		logrus.WithError(err).Error("读取token文件失败")
+		log.Error().Err(err).Msg("读取token文件失败")
 		return "", false
 	}
 	return strings.TrimSpace(string(tokenBytes)), true

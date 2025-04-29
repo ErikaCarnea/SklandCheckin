@@ -4,7 +4,6 @@ go 1.24
 
 require (
 	github.com/rs/zerolog v1.34.0
-	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/term v0.31.0
 )
 
