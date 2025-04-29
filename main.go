@@ -108,10 +108,6 @@ func loginProcess(authAPI *api.AuthAPI) *models.CredResult {
 	)
 	for {
 		fmt.Print("请输入选项: ")
-		//if _, err := fmt.Scanln(&choice); err != nil {
-		//	log.Error().Err(err).Msg("输入读取失败")
-		//	continue
-		//}
 		scanner.Scan()
 		input := strings.TrimSpace(scanner.Text())
 		if input == "" {
@@ -179,11 +175,6 @@ func proceedWithCredential(ctx *CredentialContext) {
 				log.Error().Err(err).Msg("签到失败")
 				return
 			}
-			log.Info().Interface("result", result).Msgf("[%s] (%s) %s\n",
-				b.ChannelName,
-				b.NickName,
-				utils.FormatAttendanceResult(result))
-			fmt.Println("=============================================")
 			log.Info().Msgf("[%s] (%s) %s\n",
 				b.ChannelName,
 				b.NickName,
