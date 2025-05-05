@@ -19,10 +19,14 @@ func NewPlayerAPI(client client.HTTPClient) *PlayerApi {
 
 func (p *PlayerApi) PrintAllPlayersInfo(bindings []models.Binding) error {
 	logger := log.With().Logger()
+	var playerData models.PlayerResponse
 	for _, binding := range bindings {
 		b := binding
 		respBody, err := p.fetchPlayerInfo(b)
 		if err != nil {
+			return err
+		}
+		if err = json.Unmarshal(respBody, &playerData); err != nil {
 			return err
 		}
 		logger.Info().
@@ -30,7 +34,6 @@ func (p *PlayerApi) PrintAllPlayersInfo(bindings []models.Binding) error {
 			Str("nickname", b.NickName).
 			Msg("成功获取玩家详细信息")
 		fmt.Printf("=== 玩家 %s (%s) ===\n", b.NickName, b.Uid)
-		fmt.Println(string(respBody))
 	}
 	return nil
 }
