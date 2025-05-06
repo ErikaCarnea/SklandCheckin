@@ -18,7 +18,7 @@ import (
 )
 
 type CredentialContext struct {
-	HttpClient    client.HTTPClient
+	HttpClient    client.SklandHttpClient
 	BindingAPI    *api.BindingAPI
 	AttendanceAPI *api.AttendanceAPI
 	PlayerAPI     *api.PlayerApi
@@ -30,15 +30,18 @@ func main() {
 	zerolog.TimestampFieldName = "timestamp"
 	zerolog.LevelFieldName = "level"
 	zerolog.MessageFieldName = "message"
-	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout}
+	consoleWriter := zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: time.DateTime,
+	}
 	log.Logger = zerolog.New(consoleWriter).With().Timestamp().Logger()
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	// 检测今日是否已经运行过
-	if utils.HasRunToday() {
-		log.Info().Msg("今日已经运行过，程序退出")
-		os.Exit(0)
-	}
+	//if utils.HasRunToday() {
+	//	log.Info().Msg("今日已经运行过，程序退出")
+	//	os.Exit(0)
+	//}
 	// 创建标记文件
 	if err := utils.MarkRun(); err != nil {
 		log.Error().Err(err).Msg("无法创建运行标记文件，程序继续执行")
@@ -72,7 +75,7 @@ func main() {
 	ctx.CredResult = credResult
 	proceedWithCredential(ctx)
 	runCheckinTasks(checkinAPI)
-	time.Sleep(3000 * time.Millisecond)
+	//time.Sleep(3000 * time.Millisecond)
 	waitForExit()
 }
 
@@ -164,24 +167,46 @@ func proceedWithCredential(ctx *CredentialContext) {
 	//}
 
 	// 执行签到
-	// 并发执行签到
-	var wg sync.WaitGroup
+	signErrors := signAttendance(ctx, bindings)
+	if len(signErrors) > 0 {
+		for _, err = range signErrors {
+			log.Error().Err(err).Msg("签到失败")
+		}
+	}
+}
+
+func signAttendance(ctx *CredentialContext, bindings []models.Binding) []error {
+	var (
+		wg     sync.WaitGroup
+		errCh  = make(chan error, len(bindings))
+		errors []error
+	)
+
 	for _, binding := range bindings {
 		wg.Add(1)
 		go func(b models.Binding) {
 			defer wg.Done()
 			result, err := ctx.AttendanceAPI.SignAttendance(b)
 			if err != nil {
-				log.Error().Err(err).Msg("签到失败")
+				errCh <- err
 				return
 			}
-			log.Info().Msgf("[%s] (%s) %s\n",
+			log.Info().Msgf("[%s] (%s) %s",
 				b.ChannelName,
 				b.NickName,
 				utils.FormatAttendanceResult(result))
 		}(binding)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	for err := range errCh {
+		errors = append(errors, err)
+	}
+	return errors
 }
 
 func runCheckinTasks(a *api.CheckinAPI) {

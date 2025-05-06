@@ -7,10 +7,10 @@ import (
 )
 
 type BindingAPI struct {
-	client client.HTTPClient
+	client client.SklandHttpClient
 }
 
-func NewBindingAPI(c client.HTTPClient) *BindingAPI {
+func NewBindingAPI(c client.SklandHttpClient) *BindingAPI {
 	return &BindingAPI{client: c}
 }
 

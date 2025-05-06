@@ -17,10 +17,10 @@ import (
 const AppCode = "4ca99fa6b56cc2ba"
 
 type AuthAPI struct {
-	client client.HTTPClient
+	client client.SklandHttpClient
 }
 
-func NewAuthAPI(c client.HTTPClient) *AuthAPI {
+func NewAuthAPI(c client.SklandHttpClient) *AuthAPI {
 	return &AuthAPI{client: c}
 }
 

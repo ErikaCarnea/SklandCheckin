@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type HTTPClient interface {
+type SklandHttpClient interface {
 	DoRequest(method, url string, body any, headers map[string]string) (*http.Response, error)
 	GetSignHeaders(urlStr, method string, body any) (map[string]string, error)
 	SetCred(cred string)

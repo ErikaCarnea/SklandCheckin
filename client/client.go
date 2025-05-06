@@ -38,7 +38,7 @@ type signHeader struct {
 	VName     string `json:"vName"`
 }
 
-func NewClient() HTTPClient {
+func NewClient() SklandHttpClient {
 	return &httpClient{
 		client: &http.Client{
 			Timeout: DefaultTimeout,

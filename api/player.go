@@ -10,10 +10,10 @@ import (
 )
 
 type PlayerApi struct {
-	client client.HTTPClient
+	client client.SklandHttpClient
 }
 
-func NewPlayerAPI(client client.HTTPClient) *PlayerApi {
+func NewPlayerAPI(client client.SklandHttpClient) *PlayerApi {
 	return &PlayerApi{client: client}
 }
 
