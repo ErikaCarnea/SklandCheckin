@@ -62,7 +62,7 @@ func (p *PlayerApi) fetchPlayerInfo(b models.Binding) ([]byte, error) {
 		Message string `json:"message"`
 	}
 
-	if err = json.Unmarshal(body, &errResp); err != nil {
+	if err := json.Unmarshal(body, &errResp); err != nil {
 		return nil, fmt.Errorf("解析响应元数据失败: %w", err)
 	}
 

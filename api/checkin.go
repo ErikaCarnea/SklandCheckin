@@ -25,7 +25,6 @@ func NewCheckinAPI(c client.SklandHttpClient) *CheckinAPI {
 }
 
 func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
-
 	reqBody := models.CheckinRequest{
 		GameID: strconv.Itoa(gameID),
 	}

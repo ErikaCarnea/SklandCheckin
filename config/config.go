@@ -14,11 +14,7 @@ func SaveToken(token string) error {
 		return err
 	}
 
-	fmt.Printf(
-		"您的鹰角网络通行证已经保存在%s, 打开这个可以把它复制到云函数服务器上执行!\n"+
-			"如果需要再次运行，删除创建的这个文件即可\n",
-		TokenFileName,
-	)
+	fmt.Printf("您的鹰角网络通行证已经保存在%s!\n", TokenFileName)
 	return nil
 }
 

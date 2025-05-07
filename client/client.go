@@ -164,7 +164,6 @@ func (c *httpClient) parseResponse(resp *http.Response, target models.ApiRespons
 func CloseResponse(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
-			//logrus.WithError(err).Error("关闭响应体失败")
 			log.Error().Err(err).Msg("关闭响应体失败")
 		}
 	}

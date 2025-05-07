@@ -122,7 +122,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		return nil, err
 	}
 
-	if err = config.SaveToken(loginResult.Data.Token); err != nil {
+	if err := config.SaveToken(loginResult.Data.Token); err != nil {
 		log.Error().Err(err).Msg("保存Token失败")
 	}
 
@@ -155,7 +155,7 @@ func (a *AuthAPI) LoginByCode() (*models.CredResult, error) {
 		return nil, fmt.Errorf("无效的数据结构，缺少content字段")
 	}
 
-	if err = config.SaveToken(response.Data.Content); err != nil {
+	if err := config.SaveToken(response.Data.Content); err != nil {
 		return nil, fmt.Errorf("保存Token失败: %w", err)
 	}
 
