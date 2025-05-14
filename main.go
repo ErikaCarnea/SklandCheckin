@@ -21,7 +21,7 @@ type CredentialContext struct {
 	HttpClient    client.SklandHttpClient
 	BindingAPI    *api.BindingAPI
 	AttendanceAPI *api.AttendanceAPI
-	PlayerAPI     *api.PlayerApi
+	PlayerAPI     *api.PlayerAPI
 	CredResult    *models.CredResult
 }
 
@@ -39,7 +39,7 @@ func main() {
 
 	// 检测今日是否已经运行过
 	//if utils.HasRunToday() {
-	//	log.Info().Msg("今日已经运行过，程序退出")
+	//	log.Info().Msg("今日已运行，程序退出")
 	//	os.Exit(0)
 	//}
 	// 创建标记文件
@@ -61,21 +61,19 @@ func main() {
 		AttendanceAPI: attendanceAPI,
 		PlayerAPI:     playerAPI,
 	}
-
-	if token, exists := config.CheckSavedToken(); exists {
-		credResult := tryAutoLogin(authAPI, token)
-		ctx.CredResult = credResult
-		proceedWithCredential(ctx)
-		runCheckinTasks(checkinAPI)
-		waitForExit()
-		return
+	var credResult *models.CredResult
+	token, exists := config.CheckSavedToken()
+	if exists {
+		credResult = tryAutoLogin(authAPI, token)
+		if credResult == nil {
+			credResult = loginProcess(authAPI)
+		}
+	} else {
+		credResult = loginProcess(authAPI)
 	}
-
-	credResult := loginProcess(authAPI)
 	ctx.CredResult = credResult
 	proceedWithCredential(ctx)
 	runCheckinTasks(checkinAPI)
-	//time.Sleep(3000 * time.Millisecond)
 	waitForExit()
 }
 
@@ -91,6 +89,7 @@ func tryAutoLogin(authAPI *api.AuthAPI, token string) *models.CredResult {
 		if err := os.Remove(config.TokenFileName); err != nil {
 			log.Error().Err(err).Msg("删除token文件失败")
 		}
+		return nil
 	}
 	log.Info().Msg("检测到有效token，自动登录成功")
 	return credResult

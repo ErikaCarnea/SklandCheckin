@@ -9,15 +9,15 @@ import (
 	"net/http"
 )
 
-type PlayerApi struct {
+type PlayerAPI struct {
 	client client.SklandHttpClient
 }
 
-func NewPlayerAPI(client client.SklandHttpClient) *PlayerApi {
-	return &PlayerApi{client: client}
+func NewPlayerAPI(client client.SklandHttpClient) *PlayerAPI {
+	return &PlayerAPI{client: client}
 }
 
-func (p *PlayerApi) PrintAllPlayersInfo(bindings []models.Binding) error {
+func (p *PlayerAPI) PrintAllPlayersInfo(bindings []models.Binding) error {
 	logger := log.With().Logger()
 	var playerData models.PlayerResponse
 	for _, binding := range bindings {
@@ -38,7 +38,7 @@ func (p *PlayerApi) PrintAllPlayersInfo(bindings []models.Binding) error {
 	return nil
 }
 
-func (p *PlayerApi) fetchPlayerInfo(b models.Binding) ([]byte, error) {
+func (p *PlayerAPI) fetchPlayerInfo(b models.Binding) ([]byte, error) {
 	urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/player/info?uid=%s", b.Uid)
 	headers, err := p.client.GetSignHeaders(urlStr, http.MethodGet, nil)
 	if err != nil {

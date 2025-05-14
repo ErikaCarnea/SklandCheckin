@@ -25,7 +25,7 @@ func (a *AttendanceAPI) SignAttendance(b models.Binding) (*models.AttendanceResu
 		reqBody,
 		&result,
 	); err != nil {
-		return nil, fmt.Errorf("account: %v | %w",
+		return nil, fmt.Errorf("%v | %w",
 			b.ToString(),
 			err)
 	}
