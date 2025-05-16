@@ -1,10 +1,10 @@
 package api
 
 import (
-	"Skland/client"
-	"Skland/models"
 	"encoding/json"
 	"fmt"
+	"github.com/HeathErika/Skland/client"
+	"github.com/HeathErika/Skland/models"
 	"github.com/rs/zerolog/log"
 	"net/http"
 )

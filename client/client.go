@@ -1,7 +1,6 @@
 package client
 
 import (
-	"Skland/models"
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
@@ -11,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/HeathErika/Skland/models"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"

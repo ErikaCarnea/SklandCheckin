@@ -1,4 +1,4 @@
-module Skland
+module github.com/HeathErika/Skland
 
 go 1.24
 

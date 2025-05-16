@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"Skland/models"
 	"fmt"
+	"github.com/HeathErika/Skland/models"
 	"strconv"
 	"time"
 )

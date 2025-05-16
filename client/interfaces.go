@@ -1,7 +1,7 @@
 package client
 
 import (
-	"Skland/models"
+	"github.com/HeathErika/Skland/models"
 	"net/http"
 )
 

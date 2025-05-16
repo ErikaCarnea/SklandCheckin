@@ -1,12 +1,12 @@
 package api
 
 import (
-	"Skland/client"
-	"Skland/config"
-	"Skland/models"
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/HeathErika/Skland/client"
+	"github.com/HeathErika/Skland/config"
+	"github.com/HeathErika/Skland/models"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/term"
 	"net/http"

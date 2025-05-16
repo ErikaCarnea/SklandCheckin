@@ -1,9 +1,9 @@
 package api
 
 import (
-	"Skland/client"
-	"Skland/models"
 	"fmt"
+	"github.com/HeathErika/Skland/client"
+	"github.com/HeathErika/Skland/models"
 	"net/http"
 )
 

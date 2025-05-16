@@ -1,13 +1,13 @@
 package main
 
 import (
-	"Skland/api"
-	"Skland/client"
-	"Skland/config"
-	"Skland/models"
-	"Skland/utils"
 	"bufio"
 	"fmt"
+	"github.com/HeathErika/Skland/api"
+	"github.com/HeathErika/Skland/client"
+	"github.com/HeathErika/Skland/config"
+	"github.com/HeathErika/Skland/models"
+	"github.com/HeathErika/Skland/utils"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -38,10 +38,10 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	// 检测今日是否已经运行过
-	//if utils.HasRunToday() {
-	//	log.Info().Msg("今日已运行，程序退出")
-	//	os.Exit(0)
-	//}
+	if utils.HasRunToday() {
+		log.Info().Msg("今日已运行，程序退出")
+		os.Exit(0)
+	}
 	// 创建标记文件
 	if err := utils.MarkRun(); err != nil {
 		log.Error().Err(err).Msg("无法创建运行标记文件，程序继续执行")
@@ -78,7 +78,7 @@ func main() {
 }
 
 func waitForExit() {
-	fmt.Println("\n签到执行完毕，按回车键退出程序（30秒后自动退出）...")
+	fmt.Println("\n签到执行完毕，按回车键退出程序（10秒后自动退出）...")
 
 	inputCh := make(chan int)
 
@@ -90,7 +90,7 @@ func waitForExit() {
 	select {
 	case <-inputCh:
 		fmt.Println("程序退出")
-	case <-time.After(10 * time.Second): // 30秒超时
+	case <-time.After(10 * time.Second): // 10秒超时
 		fmt.Println("\n等待超时，程序自动退出")
 	}
 }
