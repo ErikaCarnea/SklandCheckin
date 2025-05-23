@@ -29,6 +29,14 @@ func (p *PlayerAPI) PrintAllPlayersInfo(bindings []models.Binding) error {
 		if err = json.Unmarshal(respBody, &playerData); err != nil {
 			return err
 		}
+		//activityData := playerData.Data.ActivityInfoMap
+		//for _, key := range activityData.Keys() {
+		//	value, exists := activityData.Get(key)
+		//	if !exists {
+		//		continue // 或处理不存在的情况
+		//	}
+		//	fmt.Printf("Key: %s, Value: %v\n", key, value)
+		//}
 		logger.Info().
 			Str("uid", b.Uid).
 			Str("nickname", b.NickName).
