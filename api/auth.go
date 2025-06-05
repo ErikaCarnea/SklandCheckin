@@ -4,17 +4,25 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+
 	"github.com/HeathErika/Skland/client"
 	"github.com/HeathErika/Skland/config"
 	"github.com/HeathErika/Skland/models"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/term"
-	"net/http"
-	"os"
-	"strings"
 )
 
-const AppCode = "4ca99fa6b56cc2ba"
+const (
+	AppCode             = "4ca99fa6b56cc2ba"
+	PhonePasswordURL    = "https://as.hypergryph.com/user/auth/v1/token_by_phone_password"
+	SendPhoneCodeURL    = "https://as.hypergryph.com/general/v1/send_phone_code"
+	TokenByPhoneCodeUrl = "https://as.hypergryph.com/user/auth/v2/token_by_phone_code"
+	GenerateCredURL     = "https://zonai.skland.com/api/v1/user/auth/generate_cred_by_code"
+	GrantURL            = "https://as.hypergryph.com/user/oauth2/v2/grant"
+)
 
 type AuthAPI struct {
 	client client.SklandHttpClient
@@ -67,7 +75,7 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 	var loginResult models.LoginResult
 	if err := a.client.ExecuteRequest(
 		http.MethodPost,
-		"https://as.hypergryph.com/user/auth/v1/token_by_phone_password",
+		PhonePasswordURL,
 		reqBody,
 		&loginResult,
 	); err != nil {
@@ -94,7 +102,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	var sendCodeResult models.SendCodeResult
 	if err := a.client.ExecuteRequest(
 		http.MethodPost,
-		"https://as.hypergryph.com/general/v1/send_phone_code",
+		SendPhoneCodeURL,
 		map[string]any{"phone": phone, "type": 2},
 		&sendCodeResult,
 	); err != nil {
@@ -115,7 +123,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 	var loginResult models.LoginResult
 	if err := a.client.ExecuteRequest(
 		http.MethodPost,
-		"https://as.hypergryph.com/user/auth/v2/token_by_phone_code",
+		TokenByPhoneCodeUrl,
 		map[string]string{"phone": phone, "code": code},
 		&loginResult,
 	); err != nil {
@@ -175,7 +183,7 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 
 	resp, err := a.client.DoRequest(
 		http.MethodPost,
-		"https://zonai.skland.com/api/v1/user/auth/generate_cred_by_code",
+		GenerateCredURL,
 		reqBody,
 		map[string]string{"Content-Type": "application/json"},
 	)
@@ -200,7 +208,7 @@ func (a *AuthAPI) getGrantCode(token string) (string, error) {
 	var result models.GrantResult
 	if err := a.client.ExecuteRequest(
 		http.MethodPost,
-		"https://as.hypergryph.com/user/oauth2/v2/grant",
+		GrantURL,
 		map[string]any{"appCode": AppCode, "token": token, "type": 0},
 		&result,
 	); err != nil {

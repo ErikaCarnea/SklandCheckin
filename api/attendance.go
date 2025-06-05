@@ -2,10 +2,13 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/HeathErika/Skland/client"
 	"github.com/HeathErika/Skland/models"
-	"net/http"
 )
+
+const AttendanceURL = "https://zonai.skland.com/api/v1/game/attendance"
 
 type AttendanceAPI struct {
 	client client.SklandHttpClient
@@ -21,7 +24,7 @@ func (a *AttendanceAPI) SignAttendance(b models.Binding) (*models.AttendanceResu
 
 	if err := a.client.ExecuteRequest(
 		http.MethodPost,
-		"https://zonai.skland.com/api/v1/game/attendance",
+		AttendanceURL,
 		reqBody,
 		&result,
 	); err != nil {
