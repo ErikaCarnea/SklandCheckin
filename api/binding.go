@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/HeathErika/Skland/client"
 	"github.com/HeathErika/Skland/models"
-	"net/http"
 )
 
 type BindingAPI struct {

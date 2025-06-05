@@ -190,7 +190,7 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 	}
 
 	if credResult.Code != 0 {
-		return nil, fmt.Errorf(credResult.GetMessage())
+		return nil, fmt.Errorf("%s", credResult.GetMessage())
 	}
 
 	return &credResult, nil

@@ -172,11 +172,11 @@ func proceedWithCredential(ctx *CredentialContext) {
 	}
 
 	// 打印玩家信息
-	//if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-	//	log.Error().Err(err).Msg("获取玩家信息失败")
-	//	waitForExit()
-	//	os.Exit(1)
-	//}
+	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
+		log.Error().Err(err).Msg("获取玩家信息失败")
+		waitForExit()
+		os.Exit(1)
+	}
 
 	// 执行签到
 	signErrors := signAttendance(ctx, bindings)
