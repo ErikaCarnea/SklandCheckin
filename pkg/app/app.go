@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+
 	"github.com/HeathErika/Skland/api"
 	"github.com/HeathErika/Skland/client"
 	"github.com/HeathErika/Skland/models"
@@ -32,10 +34,10 @@ func NewAppContext() *AppContext {
 
 func (ctx *AppContext) Run() {
 	// 检测今日是否已经运行过
-	// if utils.HasRunToday() {
-	// 	log.Info().Msg("今日已运行，程序退出")
-	// 	os.Exit(0)
-	// }
+	if utils.HasRunToday() {
+		log.Info().Msg("今日已运行，程序退出")
+		os.Exit(0)
+	}
 	// 创建标记文件
 	if err := utils.MarkRun(); err != nil {
 		log.Error().Err(err).Msg("无法创建运行标记文件，程序继续执行")
