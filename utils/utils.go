@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -9,10 +10,10 @@ import (
 func getLastRunFilePath() string {
 	exePath, err := os.Executable()
 	if err != nil {
-		return "skland_lastRun"
+		return filepath.Join("mark", "SklandMarkFile")
 	}
 	exeDir := filepath.Dir(exePath)
-	return filepath.Join(exeDir, ".skland_lastRun")
+	return filepath.Join(exeDir, "mark", "SklandMarkFile")
 }
 
 func HasRunToday() bool {
@@ -26,17 +27,42 @@ func HasRunToday() bool {
 	}
 	modTime := info.ModTime().Local()
 	now := time.Now().Local()
-	return modTime.Year() == now.Year() &&
-		modTime.Month() == now.Month() &&
-		modTime.Day() == now.Day()
+	return isSameDay(modTime, now)
+}
+
+func isSameDay(t1, t2 time.Time) bool {
+	return t1.Truncate(24 * time.Hour).Equal(t2.Truncate(24 * time.Hour))
 }
 
 func MarkRun() error {
 	filename := getLastRunFilePath()
+	dir := filepath.Dir(filename)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 	return nil
+}
+
+func WaitForExit() {
+	fmt.Println("\n签到执行完毕，按回车键退出程序（10秒后自动退出）...")
+
+	inputCh := make(chan int)
+
+	go func() {
+		n, _ := fmt.Scanln()
+		inputCh <- n
+	}()
+
+	select {
+	case <-inputCh:
+		fmt.Println("程序退出")
+	case <-time.After(10 * time.Second):
+		fmt.Println("\n等待超时，程序自动退出")
+	}
 }

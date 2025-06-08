@@ -10,13 +10,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/HeathErika/Skland/models"
-	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
+
+	"github.com/HeathErika/Skland/models"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -28,7 +28,6 @@ type httpClient struct {
 	client    *http.Client
 	headers   map[string]string
 	signToken string
-	mu        sync.Mutex
 }
 
 type signHeader struct {
@@ -57,14 +56,10 @@ func NewClient() SklandHttpClient {
 }
 
 func (c *httpClient) SetCred(cred string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.headers["cred"] = cred
 }
 
 func (c *httpClient) SetSignToken(token string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.signToken = token
 }
 
