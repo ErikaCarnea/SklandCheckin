@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/HeathErika/Skland/models"
 	"net/http"
+
+	"github.com/ErikaCarnea/Skland/models"
 )
 
 type SklandHttpClient interface {

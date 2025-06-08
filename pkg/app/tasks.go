@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HeathErika/Skland/api"
-	"github.com/HeathErika/Skland/models"
-	"github.com/HeathErika/Skland/utils"
+	"github.com/ErikaCarnea/Skland/api"
+	"github.com/ErikaCarnea/Skland/models"
+	"github.com/ErikaCarnea/Skland/utils"
 	"github.com/rs/zerolog/log"
 )
 

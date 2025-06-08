@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/HeathErika/Skland/pkg/app"
-	"github.com/HeathErika/Skland/pkg/logger"
+	"github.com/ErikaCarnea/Skland/pkg/app"
+	"github.com/ErikaCarnea/Skland/pkg/logger"
 )
 
 func main() {

@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"os"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 const TokenFileName = "token.txt"

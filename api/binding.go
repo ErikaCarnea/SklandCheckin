@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/HeathErika/Skland/client"
-	"github.com/HeathErika/Skland/models"
+	"github.com/ErikaCarnea/Skland/client"
+	"github.com/ErikaCarnea/Skland/models"
 )
 
 type BindingAPI struct {

@@ -1,4 +1,4 @@
-module github.com/HeathErika/Skland
+module github.com/ErikaCarnea/Skland
 
 go 1.24
 

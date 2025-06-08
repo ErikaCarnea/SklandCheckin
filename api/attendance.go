@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/HeathErika/Skland/client"
-	"github.com/HeathErika/Skland/models"
+	"github.com/ErikaCarnea/Skland/client"
+	"github.com/ErikaCarnea/Skland/models"
 )
 
 const AttendanceURL = "https://zonai.skland.com/api/v1/game/attendance"

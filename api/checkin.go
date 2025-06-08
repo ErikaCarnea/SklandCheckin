@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/HeathErika/Skland/client"
-	"github.com/HeathErika/Skland/models"
 	"net/http"
 	"strconv"
+
+	"github.com/ErikaCarnea/Skland/client"
+	"github.com/ErikaCarnea/Skland/models"
 )
 
 var SklandBoard = map[int]string{

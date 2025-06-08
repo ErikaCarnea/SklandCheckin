@@ -15,7 +15,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/HeathErika/Skland/models"
+	"github.com/ErikaCarnea/Skland/models"
 	"github.com/rs/zerolog/log"
 )
 

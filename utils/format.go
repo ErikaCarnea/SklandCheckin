@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/HeathErika/Skland/models"
 	"strconv"
 	"time"
+
+	"github.com/ErikaCarnea/Skland/models"
 )
 
 func FormatAttendanceResult(result *models.AttendanceResult) string {

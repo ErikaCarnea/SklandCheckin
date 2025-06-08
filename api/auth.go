@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/HeathErika/Skland/client"
-	"github.com/HeathErika/Skland/config"
-	"github.com/HeathErika/Skland/models"
+	"github.com/ErikaCarnea/Skland/client"
+	"github.com/ErikaCarnea/Skland/config"
+	"github.com/ErikaCarnea/Skland/models"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/term"
 )
