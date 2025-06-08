@@ -72,7 +72,7 @@ func (ctx *AppContext) RunCheckinTasks() {
 	for gameId := range api.SklandBoard {
 		wg.Add(1)
 		time.Sleep(2 * time.Second)
-		logger := log.With().Int("gameID", gameId).Str("gameName", api.SklandBoard[gameId]).Logger()
+		logger := log.With().Int("gameId", gameId).Str("gameName", api.SklandBoard[gameId]).Logger()
 		go func(id int) {
 			defer wg.Done()
 			_, err := ctx.CheckinAPI.Checkin(id)
