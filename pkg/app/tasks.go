@@ -19,10 +19,10 @@ func (ctx *AppContext) PerformSignAttendance() {
 	}
 
 	// 打印玩家信息
-	if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
-		log.Error().Err(err).Msg("获取玩家信息失败")
-		return
-	}
+	// if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
+	// 	log.Error().Err(err).Msg("获取玩家信息失败")
+	// 	return
+	// }
 
 	// 执行签到
 	signErrors := ctx.signAttendance(bindings)
