@@ -18,10 +18,10 @@ var SklandBoard = map[int]string{
 }
 
 type CheckinAPI struct {
-	client client.SklandHttpClient
+	client client.SklandHTTPClient
 }
 
-func NewCheckinAPI(c client.SklandHttpClient) *CheckinAPI {
+func NewCheckinAPI(c client.SklandHTTPClient) *CheckinAPI {
 	return &CheckinAPI{client: c}
 }
 

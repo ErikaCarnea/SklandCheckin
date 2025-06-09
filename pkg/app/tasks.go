@@ -69,10 +69,10 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
 
 func (ctx *AppContext) RunCheckinTasks() {
 	var wg sync.WaitGroup
-	for gameId := range api.SklandBoard {
+	for gameID := range api.SklandBoard {
 		wg.Add(1)
 		time.Sleep(2 * time.Second)
-		logger := log.With().Int("gameId", gameId).Str("gameName", api.SklandBoard[gameId]).Logger()
+		logger := log.With().Int("gameId", gameID).Str("gameName", api.SklandBoard[gameID]).Logger()
 		go func(id int) {
 			defer wg.Done()
 			_, err := ctx.CheckinAPI.Checkin(id)
@@ -81,7 +81,7 @@ func (ctx *AppContext) RunCheckinTasks() {
 				return
 			}
 			logger.Info().Msg("检票成功")
-		}(gameId)
+		}(gameID)
 	}
 	wg.Wait()
 }

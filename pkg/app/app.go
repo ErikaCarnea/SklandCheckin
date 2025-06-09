@@ -11,7 +11,7 @@ import (
 )
 
 type AppContext struct {
-	HttpClient    client.SklandHttpClient
+	HttpClient    client.SklandHTTPClient
 	AuthAPI       *api.AuthAPI
 	BindidngAPI   *api.BindingAPI
 	AttendanceAPI *api.AttendanceAPI

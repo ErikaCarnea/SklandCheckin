@@ -11,10 +11,10 @@ import (
 const AttendanceURL = "https://zonai.skland.com/api/v1/game/attendance"
 
 type AttendanceAPI struct {
-	client client.SklandHttpClient
+	client client.SklandHTTPClient
 }
 
-func NewAttendanceAPI(c client.SklandHttpClient) *AttendanceAPI {
+func NewAttendanceAPI(c client.SklandHTTPClient) *AttendanceAPI {
 	return &AttendanceAPI{client: c}
 }
 

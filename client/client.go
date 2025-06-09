@@ -37,7 +37,7 @@ type signHeader struct {
 	VName     string `json:"vName"`
 }
 
-func NewClient() SklandHttpClient {
+func NewClient() SklandHTTPClient {
 	return &httpClient{
 		client: &http.Client{
 			Timeout: DefaultTimeout,
@@ -121,7 +121,7 @@ func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	return headers, nil
 }
 
-func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.ApiResponse) error {
+func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.APIResponse) error {
 	// 1. 生成签名头
 	headers, err := c.GetSignHeaders(urlStr, method, reqBody)
 	if err != nil {
@@ -139,7 +139,7 @@ func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarg
 	return c.parseResponse(resp, respTarget)
 }
 
-func (c *httpClient) parseResponse(resp *http.Response, target models.ApiResponse) error {
+func (c *httpClient) parseResponse(resp *http.Response, target models.APIResponse) error {
 	body, err := ReadResponseBody(resp)
 	if err != nil {
 		return fmt.Errorf("读取响应失败: %w", err)

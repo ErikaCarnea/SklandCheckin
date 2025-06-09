@@ -12,10 +12,10 @@ import (
 )
 
 type PlayerAPI struct {
-	client client.SklandHttpClient
+	client client.SklandHTTPClient
 }
 
-func NewPlayerAPI(client client.SklandHttpClient) *PlayerAPI {
+func NewPlayerAPI(client client.SklandHTTPClient) *PlayerAPI {
 	return &PlayerAPI{client: client}
 }
 

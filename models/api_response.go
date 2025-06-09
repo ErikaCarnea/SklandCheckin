@@ -1,6 +1,6 @@
 package models
 
-type ApiResponse interface {
+type APIResponse interface {
 	GetCode() int
 	GetMessage() string
 }

@@ -25,10 +25,10 @@ const (
 )
 
 type AuthAPI struct {
-	client client.SklandHttpClient
+	client client.SklandHTTPClient
 }
 
-func NewAuthAPI(c client.SklandHttpClient) *AuthAPI {
+func NewAuthAPI(c client.SklandHTTPClient) *AuthAPI {
 	return &AuthAPI{client: c}
 }
 
