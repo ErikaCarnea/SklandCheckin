@@ -48,7 +48,6 @@ func (ctx *AppContext) Run() {
 
 	if !ctx.Authenticate() {
 		log.Error().Msg("登录失败，程序退出")
-		utils.WaitForExit()
 		return
 	}
 
