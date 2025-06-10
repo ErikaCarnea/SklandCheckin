@@ -25,15 +25,9 @@ func HasRunToday() bool {
 		}
 		return false
 	}
-	modTime := info.ModTime()
-	now := time.Now()
-	return isSameDay(modTime, now)
-}
-
-func isSameDay(t1, t2 time.Time) bool {
-	y1, m1, d1 := t1.Local().Date()
-	y2, m2, d2 := t2.Local().Date()
-	return y1 == y2 && m1 == m2 && d1 == d2
+	now := time.Now().Local()
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	return info.ModTime().After(todayStart)
 }
 
 func MarkRun() error {
