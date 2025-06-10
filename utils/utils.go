@@ -25,13 +25,15 @@ func HasRunToday() bool {
 		}
 		return false
 	}
-	modTime := info.ModTime().Local()
-	now := time.Now().Local()
+	modTime := info.ModTime()
+	now := time.Now()
 	return isSameDay(modTime, now)
 }
 
 func isSameDay(t1, t2 time.Time) bool {
-	return t1.Truncate(24 * time.Hour).Equal(t2.Truncate(24 * time.Hour))
+	y1, m1, d1 := t1.Local().Date()
+	y2, m2, d2 := t2.Local().Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
 func MarkRun() error {
