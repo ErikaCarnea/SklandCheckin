@@ -37,5 +37,9 @@ func Init() {
 	zerolog.TimestampFieldName = "timestamp"
 	zerolog.LevelFieldName = "level"
 	zerolog.MessageFieldName = "message"
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if os.Getenv("ENV") == "dev" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
 }

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func getLastRunFilePath() string {
@@ -21,13 +23,30 @@ func HasRunToday() bool {
 	info, err := os.Stat(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
+			log.Info().Msg("未找到标记文件")
 			return false
 		}
+		log.Error().Err(err).Msg("获取文件信息失败，视为今日未运行")
 		return false
 	}
-	now := time.Now().Local()
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	return info.ModTime().After(todayStart)
+	cst := time.FixedZone("CST", 8*60*60)
+	modTime := info.ModTime()
+	if modTime.Location() != cst {
+		modTime = modTime.In(cst)
+	}
+
+	now := time.Now().In(cst)
+
+	log.Debug().
+		Str("文件修改时间", modTime.String()).
+		Str("当前运行时间", now.String()).
+		Msg("时间比对")
+
+	return isSameDay(modTime, now)
+}
+
+func isSameDay(t1, t2 time.Time) bool {
+	return t1.Year() == t2.Year() && t1.Month() == t2.Month() && t1.Day() == t2.Day()
 }
 
 func MarkRun() error {
