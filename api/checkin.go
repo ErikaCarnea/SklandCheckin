@@ -31,12 +31,16 @@ func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
 	}
 
 	var resp models.CheckinResponse
-	if err := c.client.ExecuteRequest(
+	err := c.client.ExecuteRequest(
 		http.MethodPost,
 		"https://zonai.skland.com/api/v1/score/checkin",
 		reqBody,
 		&resp,
-	); err != nil {
+	)
+	if resp.Code == 10001 {
+		return &resp, err
+	}
+	if err != nil {
 		return nil, err
 	}
 	return &resp, nil

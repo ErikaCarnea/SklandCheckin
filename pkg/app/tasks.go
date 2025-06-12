@@ -1,7 +1,6 @@
 package app
 
 import (
-	"sync"
 	"time"
 
 	"github.com/ErikaCarnea/Skland/api"
@@ -10,16 +9,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (ctx *AppContext) PerformSignAttendance() {
+func (ctx *AppContext) PerformSignAttendance() bool {
 	// 获取绑定列表
 	bindings, err := ctx.BindidngAPI.GetBindingList()
 	if err != nil {
 		log.Error().Err(err).Msg("获取绑定列表失败")
-		return
-	}
-	for _, binding := range bindings {
-		// 查询签到信息
-		ctx.AttendanceAPI.QueryAttendanceInfo(binding)
+		return false
 	}
 
 	// 打印玩家信息
@@ -34,7 +29,9 @@ func (ctx *AppContext) PerformSignAttendance() {
 		for _, err := range signErrors {
 			log.Error().Err(err).Msg("签到失败")
 		}
+		return false
 	}
+	return true
 }
 
 func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
@@ -42,7 +39,6 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
 
 	for _, b := range bindings {
 		if ctx.AttendanceAPI.QueryAttendanceInfo(b) {
-			log.Info().Msgf("[%s] (%s) 今天已经签到过了", b.ChannelName, b.NickName)
 			continue
 		}
 		result, err := ctx.AttendanceAPI.SignAttendance(b)
@@ -58,21 +54,21 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
 	return errors
 }
 
-func (ctx *AppContext) RunCheckinTasks() {
-	var wg sync.WaitGroup
-	for gameID := range api.SklandBoard {
-		wg.Add(1)
+func (ctx *AppContext) RunCheckinTasks() (flag bool) {
+	for gameID, gameName := range api.SklandBoard {
+		logger := log.With().Int("gameId", gameID).Str("gameName", gameName).Logger()
+
 		time.Sleep(2 * time.Second)
-		logger := log.With().Int("gameId", gameID).Str("gameName", api.SklandBoard[gameID]).Logger()
-		go func(id int) {
-			defer wg.Done()
-			_, err := ctx.CheckinAPI.Checkin(id)
-			if err != nil {
-				logger.Error().Err(err).Msg("检票失败")
-				return
-			}
-			logger.Info().Msg("检票成功")
-		}(gameID)
+
+		resp, err := ctx.CheckinAPI.Checkin(gameID)
+		if resp.Code == 10001 {
+			// todo: 处理重复签到
+		}
+		if err != nil {
+			logger.Error().Err(err).Msg("检票失败")
+			continue
+		}
+		logger.Info().Msg("检票成功")
 	}
-	wg.Wait()
+	return false
 }

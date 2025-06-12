@@ -54,9 +54,13 @@ func (ctx *AppContext) Run() {
 	ctx.HttpClient.SetCred(ctx.CredResult.Data.Cred)
 	ctx.HttpClient.SetSignToken(ctx.CredResult.Data.Token)
 
-	ctx.PerformSignAttendance()
+	ok := ctx.PerformSignAttendance()
 
 	ctx.RunCheckinTasks()
 
-	utils.WaitForExit()
+	if ok {
+		log.Info().Msg("今日已签到")
+	} else {
+		utils.WaitForExit()
+	}
 }
