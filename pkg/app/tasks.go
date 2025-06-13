@@ -1,8 +1,6 @@
 package app
 
 import (
-	"time"
-
 	"github.com/ErikaCarnea/Skland/api"
 	"github.com/ErikaCarnea/Skland/models"
 	"github.com/ErikaCarnea/Skland/utils"
@@ -46,7 +44,7 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
 			errors = append(errors, err)
 			continue
 		}
-		log.Info().Msgf("[%s] (%s) %s",
+		log.Info().Msgf("[%s] %s %s",
 			b.ChannelName,
 			b.NickName,
 			utils.FormatAttendanceResult(result))
@@ -54,21 +52,29 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
 	return errors
 }
 
-func (ctx *AppContext) RunCheckinTasks() (flag bool) {
+func (ctx *AppContext) RunCheckinTasks() bool {
+	allRepeated := true
+
 	for gameID, gameName := range api.SklandBoard {
 		logger := log.With().Int("gameId", gameID).Str("gameName", gameName).Logger()
-
-		time.Sleep(2 * time.Second)
-
 		resp, err := ctx.CheckinAPI.Checkin(gameID)
-		if resp.Code == 10001 {
-			// todo: 处理重复签到
-		}
-		if err != nil {
-			logger.Error().Err(err).Msg("检票失败")
+
+		if resp == nil {
+			allRepeated = false
+			logger.Error().Err(err).Msg("API请求失败")
 			continue
 		}
-		logger.Info().Msg("检票成功")
+
+		if resp.Code == 10001 {
+			continue
+		}
+
+		allRepeated = false
+		if err != nil {
+			logger.Error().Err(err).Msg("检票失败")
+		} else {
+			logger.Info().Msg("检票成功")
+		}
 	}
-	return false
+	return allRepeated
 }
