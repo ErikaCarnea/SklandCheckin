@@ -12,13 +12,21 @@ import (
 
 func Init() {
 	// 初始化日志配置
-	logDir := "logs"
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatal().Err(err).Msg("无法获取可执行文件路径")
+	}
+	exeDir := filepath.Dir(exePath)
+
+	logDir := filepath.Join(exeDir, "logs")
 	if err := os.MkdirAll(logDir, 0755); err != nil {
-		log.Error().Err(err).Msg("创建日志目录失败")
+		log.Fatal().Err(err).Msg("创建日志目录失败")
 	}
 
+	logFilePath := filepath.Join(logDir, "skland.log")
+
 	logFile := &lumberjack.Logger{
-		Filename:   filepath.Join(logDir, "skland.log"),
+		Filename:   logFilePath,
 		MaxSize:    100,
 		MaxBackups: 3,
 		MaxAge:     28,
