@@ -15,13 +15,15 @@ import (
 	"net/url"
 	"time"
 
+	"maps"
+
 	"github.com/ErikaCarnea/Skland/models"
 	"github.com/rs/zerolog/log"
 )
 
 const (
 	DefaultTimeout = 30 * time.Second
-	UserAgent      = "Skland/1.0.1 (com.hypergryph.skland; build:100001014; Android 31; ) Okhttp/4.11.0"
+	UserAgent      = "Skland/1.21.0 (com.hypergryph.skland; build:102100065; iOS 17.6.0; ) Alamofire/5.7.1"
 )
 
 type httpClient struct {
@@ -114,9 +116,7 @@ func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	headers := map[string]string{
 		"sign": sign,
 	}
-	for k, v := range headerCa {
-		headers[k] = v
-	}
+	maps.Copy(headers, headerCa)
 
 	return headers, nil
 }
