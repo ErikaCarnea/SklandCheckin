@@ -24,7 +24,7 @@ func SaveToken(token string) error {
 		return err
 	}
 
-	fmt.Printf("您的鹰角网络通行证已经保存在%s!\n", TokenFileName)
+	fmt.Printf("您的鹰角网络通行证已经保存在%s!\n", tokenPath)
 	return nil
 }
 

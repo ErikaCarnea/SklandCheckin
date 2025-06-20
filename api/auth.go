@@ -98,6 +98,9 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		return nil, fmt.Errorf("读取手机号失败: %w", err)
 	}
 	phone = strings.TrimSpace(phone)
+	if phone == "" {
+		return nil, fmt.Errorf("手机号不能为空")
+	}
 
 	var sendCodeResult models.SendCodeResult
 	if err := a.client.ExecuteRequest(
