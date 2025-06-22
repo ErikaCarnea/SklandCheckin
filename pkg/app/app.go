@@ -16,6 +16,8 @@ type AppContext struct {
 	PlayerAPI     *api.PlayerAPI
 	CheckinAPI    *api.CheckinAPI
 	CredResult    *models.CredResult
+	PopucomAPI    *api.PopucomAPI
+	ExaAPI        *api.ExaAPI
 }
 
 func NewAppContext() *AppContext {
@@ -27,6 +29,8 @@ func NewAppContext() *AppContext {
 		AttendanceAPI: api.NewAttendanceAPI(httpClient),
 		PlayerAPI:     api.NewPlayerAPI(httpClient),
 		CheckinAPI:    api.NewCheckinAPI(httpClient),
+		PopucomAPI:    api.NewPopucomAPI(httpClient),
+		ExaAPI:        api.NewExaAPI(httpClient),
 	}
 }
 
@@ -38,6 +42,9 @@ func (ctx *AppContext) Run() {
 
 	ctx.HttpClient.SetCred(ctx.CredResult.Data.Cred)
 	ctx.HttpClient.SetSignToken(ctx.CredResult.Data.Token)
+
+	ctx.GetPopucomAchievement()
+	ctx.GetExaAchievement()
 
 	hasSigned := ctx.PerformSignAttendance()
 

@@ -14,7 +14,7 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 		log.Error().Err(err).Msg("获取绑定列表失败")
 		return false
 	}
-
+	var signErrors []error
 	// 打印玩家信息
 	// if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
 	// 	log.Error().Err(err).Msg("获取玩家信息失败")
@@ -22,7 +22,12 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 	// }
 
 	// 执行签到
-	signErrors := ctx.signAttendance(bindings)
+	for _, data := range bindings.Data.List {
+		if data.AppCode == "arknights" {
+			signErrors = ctx.signAttendance(data.BindingList)
+		}
+	}
+
 	if len(signErrors) > 0 {
 		for _, err := range signErrors {
 			log.Error().Err(err).Msg("签到失败")
@@ -77,4 +82,28 @@ func (ctx *AppContext) RunCheckinTasks() bool {
 		}
 	}
 	return allRepeated
+}
+
+func (ctx *AppContext) GetPopucomAchievement() {
+	bindings, err := ctx.BindidngAPI.GetBindingList()
+	if err != nil {
+		log.Error().Err(err).Msg("获取绑定列表失败")
+	}
+	for _, data := range bindings.Data.List {
+		if data.AppCode == "popucom" {
+			ctx.PopucomAPI.GetPopucomAchievement(data.BindingList, ctx.CredResult.Data.UserId)
+		}
+	}
+}
+
+func (ctx *AppContext) GetExaAchievement() {
+	bindings, err := ctx.BindidngAPI.GetBindingList()
+	if err != nil {
+		log.Error().Err(err).Msg("获取绑定列表失败")
+	}
+	for _, data := range bindings.Data.List {
+		if data.AppCode == "exa" {
+			ctx.ExaAPI.GetExastrisAchievement(data.BindingList, ctx.CredResult.Data.UserId)
+		}
+	}
 }

@@ -15,7 +15,7 @@ func NewBindingAPI(c client.SklandHTTPClient) *BindingAPI {
 	return &BindingAPI{client: c}
 }
 
-func (b *BindingAPI) GetBindingList() ([]models.Binding, error) {
+func (b *BindingAPI) GetBindingList() (models.BindingResult, error) {
 	var result models.BindingResult
 	if err := b.client.ExecuteRequest(
 		http.MethodGet,
@@ -23,14 +23,13 @@ func (b *BindingAPI) GetBindingList() ([]models.Binding, error) {
 		nil,
 		&result,
 	); err != nil {
-		return nil, err
+		return models.BindingResult{}, err
 	}
 
-	var bindings []models.Binding
-	for _, app := range result.Data.List {
-		if app.AppCode == "arknights" {
-			bindings = append(bindings, app.BindingList...)
-		}
-	}
-	return bindings, nil
+	// var bindings []models.Binding
+	// for _, app := range result.Data.List {
+	// 	bindings = append(bindings, app.BindingList...)
+	// }
+	// return bindings, nil
+	return result, nil
 }
