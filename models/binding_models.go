@@ -19,6 +19,7 @@ type BindingResult struct {
 	Data    struct {
 		List []struct {
 			AppCode     string    `json:"appCode"`
+			AppName     string    `json:"appName"`
 			BindingList []Binding `json:"bindingList"`
 		} `json:"list"`
 	} `json:"data"`
