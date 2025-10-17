@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"time"
 
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func Init() {
@@ -23,14 +23,15 @@ func Init() {
 		log.Fatal().Err(err).Msg("创建日志目录失败")
 	}
 
-	logFilePath := filepath.Join(logDir, "skland.log")
+	logFilePath := filepath.Join(logDir, "skland-%Y%m%d.log")
 
-	logFile := &lumberjack.Logger{
-		Filename:   logFilePath,
-		MaxSize:    100,
-		MaxBackups: 3,
-		MaxAge:     28,
-		Compress:   true,
+	rotator, err := rotatelogs.New(
+		logFilePath,
+		rotatelogs.WithMaxAge(7*24*time.Hour),
+		rotatelogs.WithRotationTime(24*time.Hour),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("创建 rotatelogs 失败")
 	}
 
 	consoleWriter := zerolog.ConsoleWriter{
@@ -38,7 +39,7 @@ func Init() {
 		TimeFormat: time.DateTime,
 	}
 
-	multiWriter := zerolog.MultiLevelWriter(consoleWriter, logFile)
+	multiWriter := zerolog.MultiLevelWriter(consoleWriter, rotator)
 
 	log.Logger = zerolog.New(multiWriter).With().Timestamp().Logger()
 
