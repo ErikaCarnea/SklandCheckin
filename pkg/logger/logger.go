@@ -27,7 +27,7 @@ func Init() {
 
 	rotator, err := rotatelogs.New(
 		logFilePath,
-		rotatelogs.WithMaxAge(7*24*time.Hour),
+		rotatelogs.WithMaxAge(3*24*time.Hour),
 		rotatelogs.WithRotationTime(24*time.Hour),
 	)
 	if err != nil {
