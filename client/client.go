@@ -65,7 +65,7 @@ func (c *httpClient) SetSignToken(token string) {
 	c.signToken = token
 }
 
-func (c *httpClient) DoRequest(method, url string, body any, headers map[string]string) (*http.Response, error) {
+func (c *httpClient) doRequest(method, url string, body any, headers map[string]string, timeout time.Duration) (*http.Response, error) {
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -81,14 +81,19 @@ func (c *httpClient) DoRequest(method, url string, body any, headers map[string]
 	}
 
 	// 设置headers
-	for k, v := range c.headers {
-		req.Header.Set(k, v)
-	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
-	return c.client.Do(req)
+	// 使用自定义超时（如果提供）
+	client := c.client
+	if timeout > 0 {
+		clientCopy := *c.client
+		clientCopy.Timeout = timeout
+		client = &clientCopy
+	}
+
+	return client.Do(req)
 }
 
 func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string]string, error) {
@@ -121,16 +126,39 @@ func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	return headers, nil
 }
 
-func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.APIResponse) error {
-	// 1. 生成签名头
-	headers, err := c.GetSignHeaders(urlStr, method, reqBody)
-	if err != nil {
-		return fmt.Errorf("生成签名头失败: %w", err)
+func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarget models.APIResponse, opts ...RequestOptions) error {
+	options := RequestOptions{
+		NeedSign: true,
+		Headers:  make(map[string]string),
 	}
-	headers["Content-Type"] = "application/json"
+	if len(opts) > 0 {
+		options = opts[0]
+	}
+
+	headers := make(map[string]string)
+	for k, v := range c.headers {
+		headers[k] = v
+	}
+	for k, v := range options.Headers {
+		headers[k] = v
+	}
+
+	// 如果请求体存在，设置Content-Type
+	if reqBody != nil {
+		headers["Content-Type"] = "application/json"
+	}
+
+	// 生成签名 (如果需要)
+	if options.NeedSign {
+		signHeaders, err := c.GetSignHeaders(urlStr, method, reqBody)
+		if err != nil {
+			return fmt.Errorf("生成签名头失败: %w", err)
+		}
+		maps.Copy(headers, signHeaders)
+	}
 
 	// 2. 发送请求
-	resp, err := c.DoRequest(method, urlStr, reqBody, headers)
+	resp, err := c.doRequest(method, urlStr, reqBody, headers, options.Timeout)
 	if err != nil {
 		return fmt.Errorf("请求发送失败: %w", err)
 	}

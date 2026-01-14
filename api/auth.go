@@ -28,8 +28,8 @@ type AuthAPI struct {
 	client client.SklandHTTPClient
 }
 
-func NewAuthAPI(c client.SklandHTTPClient) *AuthAPI {
-	return &AuthAPI{client: c}
+func NewAuthAPI(client client.SklandHTTPClient) *AuthAPI {
+	return &AuthAPI{client: client}
 }
 
 func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
@@ -78,6 +78,7 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		PhonePasswordURL,
 		reqBody,
 		&loginResult,
+		client.UnsignedRequest,
 	); err != nil {
 		return nil, err
 	}
@@ -108,6 +109,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		SendPhoneCodeURL,
 		map[string]any{"phone": phone, "type": 2},
 		&sendCodeResult,
+		client.UnsignedRequest,
 	); err != nil {
 		return nil, fmt.Errorf("发送验证码失败: %w", err)
 	}
@@ -129,6 +131,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		TokenByPhoneCodeUrl,
 		map[string]string{"phone": phone, "code": code},
 		&loginResult,
+		client.UnsignedRequest,
 	); err != nil {
 		return nil, err
 	}
@@ -184,26 +187,20 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 		"kind": 1,
 	}
 
-	resp, err := a.client.DoRequest(
+	var credResult models.CredResult
+	if err := a.client.ExecuteRequest(
 		http.MethodPost,
 		GenerateCredURL,
 		reqBody,
-		map[string]string{"Content-Type": "application/json"},
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var credResult models.CredResult
-	if err := json.NewDecoder(resp.Body).Decode(&credResult); err != nil {
+		&credResult,
+		client.UnsignedRequest,
+	); err != nil {
 		return nil, err
 	}
 
-	if credResult.Code != 0 {
+	if credResult.GetCode() != 0 {
 		return nil, fmt.Errorf("%s", credResult.GetMessage())
 	}
-
 	return &credResult, nil
 }
 
@@ -214,6 +211,7 @@ func (a *AuthAPI) getGrantCode(token string) (string, error) {
 		GrantURL,
 		map[string]any{"appCode": AppCode, "token": token, "type": 0},
 		&result,
+		client.UnsignedRequest,
 	); err != nil {
 		return "", err
 	}

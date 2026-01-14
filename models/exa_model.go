@@ -7,6 +7,16 @@ type ExaResult struct {
 	Data      exaData `json:"data"`
 }
 
+// GetCode implements APIResponse.
+func (e *ExaResult) GetCode() int {
+	return e.Code
+}
+
+// GetMessage implements APIResponse.
+func (e *ExaResult) GetMessage() string {
+	return e.Message
+}
+
 type exaData struct {
 	Achievements []exaItem  `json:"achievements"`
 	Awards       []exaAward `json:"awards"`

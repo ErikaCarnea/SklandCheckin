@@ -1,12 +1,15 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/ErikaCarnea/Skland/client"
 	"github.com/ErikaCarnea/Skland/models"
 )
+
+const CheckinURL = "https://zonai.skland.com/api/v1/score/checkin"
 
 var SklandBoard = map[int]string{
 	1:   "明日方舟",
@@ -21,27 +24,36 @@ type CheckinAPI struct {
 	client client.SklandHTTPClient
 }
 
-func NewCheckinAPI(c client.SklandHTTPClient) *CheckinAPI {
-	return &CheckinAPI{client: c}
+func NewCheckinAPI(client client.SklandHTTPClient) *CheckinAPI {
+	return &CheckinAPI{client: client}
 }
 
+// Checkin 执行森空岛板块签到
+// gameID: 游戏ID，对应 SklandBoard 中的键值
+// 返回签到结果和错误信息
 func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
 	reqBody := models.CheckinRequest{
 		GameID: strconv.Itoa(gameID),
 	}
 
 	var resp models.CheckinResponse
-	err := c.client.ExecuteRequest(
+
+	if err := c.client.ExecuteRequest(
 		http.MethodPost,
-		"https://zonai.skland.com/api/v1/score/checkin",
+		CheckinURL,
 		reqBody,
 		&resp,
-	)
-	if resp.Code == 10001 {
-		return &resp, err
+		client.SignedRequest,
+	); err != nil {
+		return nil, fmt.Errorf("签到失败: %w", err)
 	}
-	if err != nil {
-		return nil, err
+
+	switch resp.GetCode() {
+	case 0:
+		return &resp, nil
+	case 10001:
+		return &resp, nil
+	default:
+		return nil, fmt.Errorf("签到失败: %s (code: %d)", resp.Message, resp.Code)
 	}
-	return &resp, nil
 }

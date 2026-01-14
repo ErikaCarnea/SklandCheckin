@@ -7,6 +7,16 @@ type PopucomResult struct {
 	Data      popucomData `json:"data"`
 }
 
+// GetCode implements APIResponse.
+func (p *PopucomResult) GetCode() int {
+	return p.Code
+}
+
+// GetMessage implements APIResponse.
+func (p *PopucomResult) GetMessage() string {
+	return p.Message
+}
+
 type popucomData struct {
 	Achievements []popucomItem  `json:"achievements"`
 	Awards       []popucomAward `json:"awards"`

@@ -9,6 +9,16 @@ type AttendanceInfo struct {
 	Data      AttendanceData `json:"data"`
 }
 
+// GetCode implements APIResponse.
+func (a *AttendanceInfo) GetCode() int {
+	return a.Code
+}
+
+// GetMessage implements APIResponse.
+func (a *AttendanceInfo) GetMessage() string {
+	return a.Message
+}
+
 type AttendanceData struct {
 	CurrentTs       string                 `json:"currentTs"`
 	Calendar        []calendar             `json:"calendar"`

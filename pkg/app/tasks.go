@@ -26,6 +26,9 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 		if data.AppCode == "arknights" {
 			signErrors = ctx.signAttendance(data.BindingList)
 		}
+		if data.AppCode == "endfield" {
+			continue
+		}
 	}
 
 	if len(signErrors) > 0 {
