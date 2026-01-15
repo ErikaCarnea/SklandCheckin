@@ -1,16 +1,8 @@
 package client
 
 import (
-	"time"
-
 	"github.com/ErikaCarnea/Skland/models"
 )
-
-type RequestOptions struct {
-	NeedSign bool
-	Headers  map[string]string
-	Timeout  time.Duration
-}
 
 type SklandHTTPClient interface {
 	GetSignHeaders(urlStr, method string, body any) (map[string]string, error)

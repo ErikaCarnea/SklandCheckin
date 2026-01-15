@@ -1,5 +1,13 @@
 package client
 
+import "time"
+
+type RequestOptions struct {
+	NeedSign bool
+	Headers  map[string]string
+	Timeout  time.Duration
+}
+
 var (
 	// SignedRequest 需要签名的请求选项
 	SignedRequest = RequestOptions{

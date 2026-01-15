@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/ErikaCarnea/Skland/client"
 	"github.com/ErikaCarnea/Skland/models"
@@ -38,22 +39,22 @@ func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
 
 	var resp models.CheckinResponse
 
-	if err := c.client.ExecuteRequest(
+	err := c.client.ExecuteRequest(
 		http.MethodPost,
 		CheckinURL,
 		reqBody,
 		&resp,
 		client.SignedRequest,
-	); err != nil {
+	)
+
+	if err != nil {
+		errStr := err.Error()
+		if strings.Contains(errStr, "code: 10001") || strings.Contains(errStr, "重复签到") {
+			return &resp, nil
+		}
 		return nil, fmt.Errorf("签到失败: %w", err)
 	}
 
-	switch resp.GetCode() {
-	case 0:
-		return &resp, nil
-	case 10001:
-		return &resp, nil
-	default:
-		return nil, fmt.Errorf("签到失败: %s (code: %d)", resp.Message, resp.Code)
-	}
+	// 正常情况
+	return &resp, nil
 }
