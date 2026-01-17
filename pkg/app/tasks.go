@@ -24,10 +24,18 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 	// 执行签到
 	for _, data := range bindings.Data.List {
 		if data.AppCode == "arknights" {
-			signErrors = ctx.signAttendance(data.BindingList)
+			for gameID, game := range api.SklandBoard {
+				if game == "明日方舟" {
+					signErrors = ctx.signAttendance(data.BindingList, gameID)
+				}
+			}
 		}
 		if data.AppCode == "endfield" {
-			continue
+			for gameID, game := range api.SklandBoard {
+				if game == "明日方舟: 终末地" {
+					signErrors = ctx.signAttendance(data.BindingList, gameID)
+				}
+			}
 		}
 	}
 
@@ -40,11 +48,14 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 	return true
 }
 
-func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
+func (ctx *AppContext) signAttendance(bindings []models.Binding, gameID int) []error {
 	var errors []error
 
 	for _, b := range bindings {
-		if ctx.AttendanceAPI.QueryAttendanceInfo(b) {
+		if ctx.AttendanceAPI.QueryAttendanceInfo(b, gameID) {
+			log.Debug().Msgf("[%s] %s 今日已签到",
+				b.ChannelName,
+				b.NickName)
 			continue
 		}
 		result, err := ctx.AttendanceAPI.SignAttendance(b)
@@ -61,30 +72,52 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding) []error {
 }
 
 func (ctx *AppContext) RunCheckinTasks() bool {
-	allRepeated := true
+	allTasksCompleted := true
+
+	// 获取所有游戏的签到状态
+	statusMap, err := ctx.CheckinAPI.GetAllCheckinStatus()
+	if err != nil {
+		// 如果获取状态失败，我们仍然尝试签到，但记录错误
+		log.Warn().Err(err).Msg("无法获取检票状态，将逐个检查")
+		statusMap = nil // 设置为nil，表示无法使用状态检查
+	}
 
 	for gameID, gameName := range api.SklandBoard {
 		logger := log.With().Int("gameId", gameID).Str("gameName", gameName).Logger()
+
+		if statusMap != nil {
+			checked, ok := statusMap[gameID]
+			if ok && checked {
+				logger.Debug().Msg("已检票")
+				continue
+			}
+		}
+
+		// 执行签到
 		resp, err := ctx.CheckinAPI.Checkin(gameID)
-
-		if resp == nil {
-			allRepeated = false
-			logger.Error().Err(err).Msg("API请求失败")
-			continue
-		}
-
-		if resp.Code == 10001 {
-			continue
-		}
-
-		allRepeated = false
 		if err != nil {
+			allTasksCompleted = false
 			logger.Error().Err(err).Msg("检票失败")
-		} else {
+			continue
+		}
+
+		// 检查签到结果
+		switch resp.Code {
+		case 0:
+			// 签到成功
 			logger.Info().Msg("检票成功")
+			// 这里注意：签到成功也算完成任务
+		case 10001:
+			// 重复签到（竞态条件）
+			logger.Info().Msg("今日已检票")
+			// 重复签到也算完成任务
+		default:
+			// 其他错误
+			allTasksCompleted = false
+			logger.Error().Int("code", resp.Code).Str("message", resp.Message).Msg("检票失败")
 		}
 	}
-	return allRepeated
+	return allTasksCompleted
 }
 
 func (ctx *AppContext) GetPopucomAchievement() {

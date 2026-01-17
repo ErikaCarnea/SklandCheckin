@@ -39,8 +39,8 @@ func (a *AttendanceAPI) SignAttendance(b models.Binding) (*models.AttendanceResu
 	return &result, nil
 }
 
-func (a *AttendanceAPI) QueryAttendanceInfo(b models.Binding) bool {
-	attendanceInfo, err := a.getAttendanceInfo(b)
+func (a *AttendanceAPI) QueryAttendanceInfo(b models.Binding, gameID int) bool {
+	attendanceInfo, err := a.getAttendanceInfo(b, gameID)
 	if err != nil {
 		log.Error().Err(err).Msg("查询签到信息失败")
 		return false
@@ -68,8 +68,14 @@ func (a *AttendanceAPI) QueryAttendanceInfo(b models.Binding) bool {
 	return false
 }
 
-func (a *AttendanceAPI) getAttendanceInfo(binding models.Binding) (*models.AttendanceInfo, error) {
-	urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/attendance?uid=%s&gameId=1", binding.Uid)
+func (a *AttendanceAPI) getAttendanceInfo(binding models.Binding, gameID int) (*models.AttendanceInfo, error) {
+	var urlStr string
+	switch gameID {
+	case 1:
+		urlStr = fmt.Sprintf("https://zonai.skland.com/api/v1/game/attendance?uid=%s&gameId=%d", binding.Uid, gameID)
+	default:
+		return nil, fmt.Errorf("游戏ID错误: %s %d", SklandBoard[gameID], gameID)
+	}
 
 	var attendanceInfo models.AttendanceInfo
 	if err := a.client.ExecuteRequest(

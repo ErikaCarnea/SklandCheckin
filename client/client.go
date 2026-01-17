@@ -23,7 +23,7 @@ import (
 
 const (
 	DefaultTimeout = 30 * time.Second
-	UserAgent      = "Skland/1.21.0 (com.hypergryph.skland; build:102100065; iOS 17.6.0; ) Alamofire/5.7.1"
+	UserAgent      = "Skland/1.21.0 (com.hypergryph.skland; build:102100065; iOS 17.6.0; ) Alamofire/5.7.1" //Skland/1.50.0 (com.hypergryph.skland; build:105000018; Android 28; ) Okhttp/4.11.0
 )
 
 type httpClient struct {

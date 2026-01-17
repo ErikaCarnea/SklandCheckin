@@ -11,6 +11,7 @@ import (
 )
 
 const CheckinURL = "https://zonai.skland.com/api/v1/score/checkin"
+const IsCheckinURL = "https://zonai.skland.com/api/v1/score/ischeckin"
 
 var SklandBoard = map[int]string{
 	1:   "明日方舟",
@@ -57,4 +58,43 @@ func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
 
 	// 正常情况
 	return &resp, nil
+}
+
+func (c *CheckinAPI) CheckIsCheckin(gameID int) (bool, error) {
+	var result models.IsCheckinResponse
+	if err := c.client.ExecuteRequest(
+		http.MethodGet,
+		IsCheckinURL,
+		nil,
+		&result,
+		client.SignedRequest,
+	); err != nil {
+		return false, err
+	}
+
+	for _, item := range result.Data.List {
+		if item.GameId == gameID {
+			return item.Checked == 1, nil
+		}
+	}
+	return false, nil
+}
+
+func (c *CheckinAPI) GetAllCheckinStatus() (map[int]bool, error) {
+	var result models.IsCheckinResponse
+	if err := c.client.ExecuteRequest(
+		http.MethodGet,
+		IsCheckinURL,
+		nil,
+		&result,
+		client.SignedRequest,
+	); err != nil {
+		return nil, err
+	}
+
+	statusMap := make(map[int]bool)
+	for _, item := range result.Data.List {
+		statusMap[item.GameId] = item.Checked == 1
+	}
+	return statusMap, nil
 }
