@@ -7,6 +7,7 @@ import (
 
 	"github.com/ErikaCarnea/Skland/client"
 	"github.com/ErikaCarnea/Skland/models"
+	"github.com/ErikaCarnea/Skland/models/player"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,7 +21,7 @@ func NewPlayerAPI(client client.SklandHTTPClient) *PlayerAPI {
 
 func (p *PlayerAPI) PrintAllPlayersInfo(bindings []models.Binding) error {
 	logger := log.With().Logger()
-	var playerData models.PlayerResponse
+	var playerData player.PlayerResponse
 
 	for _, binding := range bindings {
 		// 使用新的 ExecuteRequest 方法替换原有的 fetchPlayerInfo

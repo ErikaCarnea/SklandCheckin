@@ -26,6 +26,9 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 		if data.AppCode == "arknights" {
 			for gameID, game := range api.SklandBoard {
 				if game == "明日方舟" {
+					if err := ctx.PlayerAPI.PrintAllPlayersInfo(data.BindingList); err != nil {
+						log.Error().Err(err).Msg("获取玩家信息失败")
+					}
 					signErrors = ctx.signAttendance(data.BindingList, gameID)
 				}
 			}

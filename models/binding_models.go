@@ -7,6 +7,9 @@ type Binding struct {
 	ChannelMasterId string `json:"channelMasterId"`
 	ChannelName     string `json:"channelName"`
 	NickName        string `json:"nickName"`
+	IsOfficial      bool   `json:"isOfficial"`
+	IsDefault       bool   `json:"isDefault"`
+	IsDelete        bool   `json:"isDelete"`
 }
 
 func (b Binding) ToString() string {

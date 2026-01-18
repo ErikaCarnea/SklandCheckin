@@ -1,7 +1,5 @@
 package models
 
-import "github.com/iancoleman/orderedmap"
-
 type AttendanceInfo struct {
 	Code      int            `json:"code"`
 	Message   string         `json:"message"`
@@ -20,10 +18,10 @@ func (a *AttendanceInfo) GetMessage() string {
 }
 
 type AttendanceData struct {
-	CurrentTs       string                 `json:"currentTs"`
-	Calendar        []calendar             `json:"calendar"`
-	Records         []record               `json:"records"`
-	ResourceInfoMap *orderedmap.OrderedMap `json:"resourceInfoMap"`
+	CurrentTs       string               `json:"currentTs"`
+	Calendar        []calendar           `json:"calendar"`
+	Records         []record             `json:"records"`
+	ResourceInfoMap map[int]ResourceInfo `json:"resourceInfoMap"`
 }
 
 type calendar struct {
@@ -39,4 +37,26 @@ type record struct {
 	ResourceId string `json:"resourceId"`
 	Type       string `json:"type"`
 	Count      int    `json:"count"`
+}
+
+type ResourceInfo struct {
+	BuildingProductList []BuildingProduct `json:"buildingProductList"`
+	ClassifyType        string            `json:"classifyType"`
+	Id                  string            `json:"id"`
+	Name                string            `json:"name"`
+	OtherSource         []string          `json:"otherSource"`
+	Rarity              int               `json:"rarity"`
+	SortId              int               `json:"sortId"`
+	StageDropList       []StageDrop       `json:"stageDropList"`
+	Type                string            `json:"type"`
+}
+
+type BuildingProduct struct {
+	FormulaId string `json:"formulaId"`
+	RoomType  string `json:"roomType"`
+}
+
+type StageDrop struct {
+	OccPer   float32 `json:"occPer"`
+	StatgeId string  `json:"stageId"`
 }
