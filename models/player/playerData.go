@@ -1,7 +1,5 @@
 package player
 
-import "github.com/iancoleman/orderedmap"
-
 type PlayerResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -37,29 +35,29 @@ type data struct {
 		FinishTs int64 `json:"finishTs"`
 		State    int   `json:"state"`
 	} `json:"recruit"` // 公招
-	Campaign                  campaign                `json:"campaign"` // 剿灭
-	Tower                     tower                   `json:"tower"`    // 保全派驻
-	Rogue                     rogue                   `json:"rogue"`    // 肉鸽
-	Routine                   routine                 `json:"routine"`  // 日常周常
-	Activity                  []activity              `json:"activity"`
-	CharInfoMap               map[string]CharInfo     `json:"charInfoMap"`
-	SkinInfoMap               map[string]SkinInfo     `json:"skinInfoMap"`
-	StageInfoMap              map[string]StageInfo    `json:"stageInfoMap"`
-	ActivityInfoMap           map[string]ActivityInfo `json:"activityInfoMap"`
-	TowerInfoMap              map[string]TowerInfo    `json:"towerInfoMap"`
-	RogueInfoMap              map[string]RogueInfo    `json:"rogueInfoMap"`
-	CampaignInfoMap           map[string]CampaignInfo `json:"campaignInfoMap"`
-	CampaignZoneInfoMap       *orderedmap.OrderedMap  `json:"campaignZoneInfoMap"`
-	EquipmentInfoMap          *orderedmap.OrderedMap  `json:"equipmentInfoMap"`
-	ManufactureFormulaInfoMap *orderedmap.OrderedMap  `json:"manufactureFormulaInfoMap"`
-	CharAssets                []string                `json:"charAssets"`
-	SkinAssets                []string                `json:"skinAssets"`
-	CharAssetList             *orderedmap.OrderedMap  `json:"charAssetList"`
-	SkinAssetList             *orderedmap.OrderedMap  `json:"skinAssetList"`
-	ActivityBannerList        *orderedmap.OrderedMap  `json:"activityBannerList"`
-	BossRush                  []bossRush              `json:"bossRush"`
-	BannerList                []bannerList            `json:"bannerList"`
-	Sandbox                   []sandbox               `json:"sandbox"`
+	Campaign                  campaign                          `json:"campaign"` // 剿灭
+	Tower                     tower                             `json:"tower"`    // 保全派驻
+	Rogue                     rogue                             `json:"rogue"`    // 肉鸽
+	Routine                   routine                           `json:"routine"`  // 日常周常
+	Activity                  []activity                        `json:"activity"`
+	CharInfoMap               map[string]CharInfo               `json:"charInfoMap"`
+	SkinInfoMap               map[string]SkinInfo               `json:"skinInfoMap"`
+	StageInfoMap              map[string]StageInfo              `json:"stageInfoMap"`
+	ActivityInfoMap           map[string]ActivityInfo           `json:"activityInfoMap"`
+	TowerInfoMap              map[string]TowerInfo              `json:"towerInfoMap"`
+	RogueInfoMap              map[string]RogueInfo              `json:"rogueInfoMap"`
+	CampaignInfoMap           map[string]CampaignInfo           `json:"campaignInfoMap"`
+	CampaignZoneInfoMap       map[string]CampaignZoneInfo       `json:"campaignZoneInfoMap"`
+	EquipmentInfoMap          map[string]EquipmentInfo          `json:"equipmentInfoMap"`
+	ManufactureFormulaInfoMap map[string]ManufactureFormulaInfo `json:"manufactureFormulaInfoMap"`
+	CharAssets                []string                          `json:"charAssets"`
+	SkinAssets                []string                          `json:"skinAssets"`
+	CharAssetList             map[string][]string               `json:"charAssetList"`
+	SkinAssetList             map[string][]string               `json:"skinAssetList"`
+	ActivityBannerList        map[string][]string               `json:"activityBannerList"`
+	BossRush                  []bossRush                        `json:"bossRush"`
+	BannerList                []bannerList                      `json:"bannerList"`
+	Sandbox                   []sandbox                         `json:"sandbox"`
 }
 
 type status struct {
