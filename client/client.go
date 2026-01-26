@@ -136,12 +136,8 @@ func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarg
 	}
 
 	headers := make(map[string]string)
-	for k, v := range c.headers {
-		headers[k] = v
-	}
-	for k, v := range options.Headers {
-		headers[k] = v
-	}
+	maps.Copy(headers, c.headers)
+	maps.Copy(headers, options.Headers)
 
 	// 如果请求体存在，设置Content-Type
 	if reqBody != nil {
@@ -177,9 +173,9 @@ func (c *httpClient) parseResponse(resp *http.Response, target models.APIRespons
 		return fmt.Errorf("解析响应失败: %w", err)
 	}
 
-	if code := target.GetCode(); code != 0 {
-		return fmt.Errorf("API 返回错误: %s (code: %d)", target.GetMessage(), code)
-	}
+	// if code := target.GetCode(); code != 0 {
+	// 	return fmt.Errorf("API 返回错误: %s (code: %d)", target.GetMessage(), code)
+	// }
 
 	return nil
 }

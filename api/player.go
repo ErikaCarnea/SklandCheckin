@@ -43,14 +43,23 @@ func (p *PlayerAPI) PrintAllPlayersInfo(bindings []models.Binding) error {
 			Msg("成功获取玩家详细信息")
 		fmt.Printf("=== 玩家 %s (%s) ===\n", binding.NickName, binding.Uid)
 
-		// 注释掉的代码保持不变
-		// activityData := playerData.Data.ActivityInfoMap
-		// for _, key := range activityData.Keys() {
-		// 	value, exists := activityData.Get(key)
-		// 	if !exists {
-		// 		continue // 或处理不存在的情况
+		// if binding.Uid == "64847751" {
+		// 	for item, activityInfo := range playerData.Data.ActivityInfoMap {
+		// 		for _, actInfo := range playerData.Data.Activity {
+		// 			if item == actInfo.ActId {
+		// 				for _, zone := range actInfo.Zones {
+		// 					if zone.ClearedStage != zone.TotalStage {
+		// 						fmt.Printf("%s\n", activityInfo.Name)
+		// 						for _, v := range actInfo.Zones {
+		// 							fmt.Printf("%s\n", v.ZoneId)
+		// 							fmt.Printf("%d/%d\n", v.ClearedStage, v.TotalStage)
+		// 						}
+		// 						fmt.Println("=======================================")
+		// 					}
+		// 				}
+		// 			}
+		// 		}
 		// 	}
-		// 	fmt.Printf("Key: %s, Value: %v\n", key, value)
 		// }
 	}
 	return nil

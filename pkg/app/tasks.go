@@ -26,9 +26,9 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 		if data.AppCode == "arknights" {
 			for gameID, game := range api.SklandBoard {
 				if game == "明日方舟" {
-					if err := ctx.PlayerAPI.PrintAllPlayersInfo(data.BindingList); err != nil {
-						log.Error().Err(err).Msg("获取玩家信息失败")
-					}
+					// if err := ctx.PlayerAPI.PrintAllPlayersInfo(data.BindingList); err != nil {
+					// 	log.Error().Err(err).Msg("获取玩家信息失败")
+					// }
 					signErrors = ctx.signAttendance(data.BindingList, gameID)
 				}
 			}
@@ -53,24 +53,45 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 
 func (ctx *AppContext) signAttendance(bindings []models.Binding, gameID int) []error {
 	var errors []error
-
-	for _, b := range bindings {
-		if ctx.AttendanceAPI.QueryAttendanceInfo(b, gameID) {
-			log.Debug().Msgf("[%s] %s 今日已签到",
+	if gameID == 1 {
+		for _, b := range bindings {
+			if ctx.AttendanceAPI.QueryAttendanceInfo(b, gameID) {
+				log.Debug().Msgf("[%s] %s 今日已签到",
+					b.ChannelName,
+					b.NickName)
+				continue
+			}
+			result, err := ctx.AttendanceAPI.SignArknights(b)
+			if err != nil {
+				errors = append(errors, err)
+				continue
+			}
+			log.Info().Msgf("[%s] %s %s",
 				b.ChannelName,
-				b.NickName)
-			continue
+				b.NickName,
+				utils.FormatArknightSignResult(result))
 		}
-		result, err := ctx.AttendanceAPI.SignAttendance(b)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
-		log.Info().Msgf("[%s] %s %s",
-			b.ChannelName,
-			b.NickName,
-			utils.FormatAttendanceResult(result))
 	}
+	if gameID == 3 {
+		for _, b := range bindings {
+			if ctx.AttendanceAPI.QueryAttendanceInfo(b, gameID) {
+				log.Debug().Msgf("[%s] %s 今日已签到",
+					b.ChannelName,
+					b.NickName)
+				continue
+			}
+			result, err := ctx.AttendanceAPI.SignEndfield(b)
+			if err != nil {
+				errors = append(errors, err)
+				continue
+			}
+			log.Info().Msgf("[%s] %s %s",
+				b.Roles[0].RoleId,
+				b.Roles[0].NickName,
+				utils.FormatEndfieldSignResult(result))
+		}
+	}
+
 	return errors
 }
 

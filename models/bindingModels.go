@@ -3,17 +3,32 @@ package models
 import "fmt"
 
 type Binding struct {
-	Uid             string `json:"uid"`
-	ChannelMasterId string `json:"channelMasterId"`
-	ChannelName     string `json:"channelName"`
-	NickName        string `json:"nickName"`
-	IsOfficial      bool   `json:"isOfficial"`
-	IsDefault       bool   `json:"isDefault"`
-	IsDelete        bool   `json:"isDelete"`
+	ChannelMasterId string      `json:"channelMasterId"`
+	ChannelName     string      `json:"channelName"`
+	DefaultRole     DefaultRole `json:"defaultRole"`
+	GameId          int         `json:"gameId"`
+	GameName        string      `json:"gameName"`
+	IsDefault       bool        `json:"isDefault"`
+	IsDelete        bool        `json:"isDelete"`
+	IsOfficial      bool        `json:"isOfficial"`
+	NickName        string      `json:"nickName"`
+	Roles           []Role      `json:"roles"`
+	Uid             string      `json:"uid"`
 }
 
 func (b Binding) ToString() string {
 	return fmt.Sprintf("[%s] UID:%s %s", b.ChannelName, b.Uid, b.NickName)
+}
+
+type DefaultRole struct {
+	ServerId   string `json:"serverId"`
+	RoleId     string `json:"roleId"`
+	NickName   string `json:"nickName"`
+	Level      int    `json:"level"`
+	IsDefault  bool   `json:"isDefault"`
+	IsBanned   bool   `json:"isBanned"`
+	ServerType string `json:"serverType"`
+	ServerName string `json:"serverName"`
 }
 
 type BindingResult struct {
@@ -24,7 +39,9 @@ type BindingResult struct {
 			AppCode     string    `json:"appCode"`
 			AppName     string    `json:"appName"`
 			BindingList []Binding `json:"bindingList"`
+			DefaultUid  string    `json:"defaultUid"`
 		} `json:"list"`
+		ServerDefaultBinding any `json:"serverDefaultBinding"`
 	} `json:"data"`
 }
 
@@ -33,4 +50,15 @@ func (r BindingResult) GetCode() int {
 }
 func (r BindingResult) GetMessage() string {
 	return r.Message
+}
+
+type Role struct {
+	ServerId   string `json:"serverId"`
+	RoleId     string `json:"roleId"`
+	NickName   string `json:"nickName"`
+	Level      int    `json:"level"`
+	IsDefault  bool   `json:"isDefault"`
+	IsBanned   bool   `json:"isBanned"`
+	ServerType string `json:"serverType"`
+	ServerName string `json:"serverName"`
 }

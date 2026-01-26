@@ -1,8 +1,6 @@
 package client
 
-import (
-	"github.com/ErikaCarnea/Skland/models"
-)
+import "github.com/ErikaCarnea/Skland/models"
 
 type SklandHTTPClient interface {
 	GetSignHeaders(urlStr, method string, body any) (map[string]string, error)
