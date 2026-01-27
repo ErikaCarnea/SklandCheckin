@@ -16,8 +16,15 @@ type Binding struct {
 	Uid             string      `json:"uid"`
 }
 
-func (b Binding) ToString() string {
-	return fmt.Sprintf("[%s] UID:%s %s", b.ChannelName, b.Uid, b.NickName)
+func (b Binding) ToString(gameid int) string {
+	switch gameid {
+	case 1:
+		return fmt.Sprintf("[%s] UID:%s %s", b.ChannelName, b.Uid, b.NickName)
+	case 3:
+		return fmt.Sprintf("[%s] UID:%s %s", b.ChannelName, b.Roles[0].RoleId, b.Roles[0].NickName)
+	default:
+		return ""
+	}
 }
 
 type DefaultRole struct {

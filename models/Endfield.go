@@ -16,9 +16,9 @@ func (e *EndfieldResult) GetMessage() string {
 
 type EndfieldSignData struct {
 	Ts               string                      `json:"ts"`
-	AwardIds         []AwardIds                  `json:"calendar"`
+	AwardIds         []AwardIds                  `json:"awardIds"`
 	ResourceInfoMap  map[string]EndfieldResource `json:"resourceInfoMap"`
-	TomorrowAwardIds []AwardIds
+	TomorrowAwardIds []AwardIds                  `json:"tomorrowAwardIds"`
 }
 
 type AwardIds struct {

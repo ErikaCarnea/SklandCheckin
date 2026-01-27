@@ -29,14 +29,14 @@ func (ctx *AppContext) PerformSignAttendance() bool {
 					// if err := ctx.PlayerAPI.PrintAllPlayersInfo(data.BindingList); err != nil {
 					// 	log.Error().Err(err).Msg("获取玩家信息失败")
 					// }
-					signErrors = ctx.signAttendance(data.BindingList, gameID)
+					signErrors = append(signErrors, ctx.signAttendance(data.BindingList, gameID)...)
 				}
 			}
 		}
 		if data.AppCode == "endfield" {
 			for gameID, game := range api.SklandBoard {
 				if game == "明日方舟: 终末地" {
-					signErrors = ctx.signAttendance(data.BindingList, gameID)
+					signErrors = append(signErrors, ctx.signAttendance(data.BindingList, gameID)...)
 				}
 			}
 		}
@@ -85,7 +85,7 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding, gameID int) []e
 				errors = append(errors, err)
 				continue
 			}
-			log.Info().Msgf("[%s] %s %s",
+			log.Info().Msgf("[%s] %s %v",
 				b.Roles[0].RoleId,
 				b.Roles[0].NickName,
 				utils.FormatEndfieldSignResult(result))

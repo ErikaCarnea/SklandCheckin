@@ -34,7 +34,7 @@ func (a *AttendanceAPI) SignArknights(b models.Binding) (*models.AttendanceResul
 		client.SignedRequest,
 	); err != nil {
 		return nil, fmt.Errorf("%v | %w",
-			b.ToString(),
+			b.ToString(b.GameId),
 			err)
 	}
 	return &result, nil
@@ -116,7 +116,17 @@ func (a *AttendanceAPI) SignEndfield(b models.Binding) (*models.EndfieldResult, 
 			&result,
 			opts, // 使用包含sk-game-role的选项
 		); err != nil {
-			return nil, fmt.Errorf("%v | %w", b.ToString(), err)
+			return nil, fmt.Errorf("%v | %w", b.ToString(b.GameId), err)
+		}
+		if result.GetCode() == 10001 {
+			return &result, nil
+		}
+		if result.GetCode() == 10000 {
+			return nil, fmt.Errorf("%v | %s", b.ToString(b.GameId), result.Message)
+		} else if result.GetCode() == 10002 {
+			return nil, fmt.Errorf("%v | %s", b.ToString(b.GameId), result.Message)
+		} else if result.GetCode() != 0 {
+			return nil, fmt.Errorf("%v | %s", b.ToString(b.GameId), result.Message)
 		}
 	}
 	return &result, nil
