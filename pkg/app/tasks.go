@@ -74,24 +74,25 @@ func (ctx *AppContext) signAttendance(bindings []models.Binding, gameID int) []e
 	}
 	if gameID == 3 {
 		for _, b := range bindings {
-			if ctx.AttendanceAPI.QueryAttendanceInfo(b, gameID) {
-				log.Debug().Msgf("[%s] %s 今日已签到",
-					b.ChannelName,
-					b.NickName)
-				continue
+			// if ctx.AttendanceAPI.QueryAttendanceInfo(b, gameID) {
+			// 	log.Debug().Msgf("[%s] %s 今日已签到",
+			// 		b.ChannelName,
+			// 		b.NickName)
+			// 	continue
+			// }
+			for _, role := range b.Roles {
+				result, err := ctx.AttendanceAPI.SignEndfield(role)
+				if err != nil {
+					errors = append(errors, err)
+					continue
+				}
+				log.Info().Msgf("[%s] %s %v",
+					role.ServerName,
+					role.NickName,
+					utils.FormatEndfieldSignResult(result))
 			}
-			result, err := ctx.AttendanceAPI.SignEndfield(b)
-			if err != nil {
-				errors = append(errors, err)
-				continue
-			}
-			log.Info().Msgf("[%s] %s %v",
-				b.Roles[0].RoleId,
-				b.Roles[0].NickName,
-				utils.FormatEndfieldSignResult(result))
 		}
 	}
-
 	return errors
 }
 

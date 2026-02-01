@@ -34,7 +34,7 @@ func (a *AttendanceAPI) SignArknights(b models.Binding) (*models.AttendanceResul
 		client.SignedRequest,
 	); err != nil {
 		return nil, fmt.Errorf("%v | %w",
-			b.ToString(b.GameId),
+			b.ToString(),
 			err)
 	}
 	return &result, nil
@@ -93,41 +93,38 @@ func (a *AttendanceAPI) getAttendanceInfo(binding models.Binding, gameID int) (*
 	return &attendanceInfo, nil
 }
 
-func (a *AttendanceAPI) SignEndfield(b models.Binding) (*models.EndfieldResult, error) {
+func (a *AttendanceAPI) SignEndfield(role models.Role) (*models.EndfieldResult, error) {
 	var result models.EndfieldResult
+	skGameRole := fmt.Sprintf("3_%s_%s", role.RoleId, role.ServerId)
 
-	for _, role := range b.Roles {
-		skGameRole := fmt.Sprintf("3_%s_%s", role.RoleId, role.ServerId)
-
-		opts := client.SignedRequest
-		if opts.Headers == nil {
-			opts.Headers = make(map[string]string)
-		}
-		// 添加sk-game-role头
-		opts.Headers["sk-game-role"] = skGameRole
-		// 还可以添加其他Endfield需要的头，比如referer和origin
-		opts.Headers["referer"] = "https://game.skland.com/"
-		opts.Headers["origin"] = "https://game.skland.com/"
-		opts.Headers["Content-Type"] = "application/json"
-		if err := a.client.ExecuteRequest(
-			http.MethodPost,
-			EndfieldSignURL, // 使用正确的URL
-			nil,             // 请求体为空
-			&result,
-			opts, // 使用包含sk-game-role的选项
-		); err != nil {
-			return nil, fmt.Errorf("%v | %w", b.ToString(b.GameId), err)
-		}
-		if result.GetCode() == 10001 {
-			return &result, nil
-		}
-		if result.GetCode() == 10000 {
-			return nil, fmt.Errorf("%v | %s", b.ToString(b.GameId), result.Message)
-		} else if result.GetCode() == 10002 {
-			return nil, fmt.Errorf("%v | %s", b.ToString(b.GameId), result.Message)
-		} else if result.GetCode() != 0 {
-			return nil, fmt.Errorf("%v | %s", b.ToString(b.GameId), result.Message)
-		}
+	opts := client.SignedRequest
+	if opts.Headers == nil {
+		opts.Headers = make(map[string]string)
+	}
+	// 添加sk-game-role头
+	opts.Headers["sk-game-role"] = skGameRole
+	// 还可以添加其他Endfield需要的头，比如referer和origin
+	opts.Headers["referer"] = "https://game.skland.com/"
+	opts.Headers["origin"] = "https://game.skland.com/"
+	opts.Headers["Content-Type"] = "application/json"
+	if err := a.client.ExecuteRequest(
+		http.MethodPost,
+		EndfieldSignURL, // 使用正确的URL
+		nil,             // 请求体为空
+		&result,
+		opts, // 使用包含sk-game-role的选项
+	); err != nil {
+		return nil, fmt.Errorf("%v | %w", role.ToString(), err)
+	}
+	if result.GetCode() == 10001 {
+		return &result, nil
+	}
+	if result.GetCode() == 10000 {
+		return nil, fmt.Errorf("%v | %s", role.ToString(), result.Message)
+	} else if result.GetCode() == 10002 {
+		return nil, fmt.Errorf("%v | %s", role.ToString(), result.Message)
+	} else if result.GetCode() != 0 {
+		return nil, fmt.Errorf("%v | %s", role.ToString(), result.Message)
 	}
 	return &result, nil
 }
