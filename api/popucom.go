@@ -29,7 +29,7 @@ func (p *PopucomAPI) GetPopucomAchievement(b []models.Binding, userId string) er
 			urlStr,
 			nil,
 			&result,
-			client.SignedRequest,
+			client.SignedRequest(),
 		); err != nil {
 			return fmt.Errorf("用户[%s]查询泡姆泡姆成就失败: %w", user.Uid, err)
 		}

@@ -31,7 +31,7 @@ func (p *ExaAPI) GetExastrisAchievement(b []models.Binding, userId string) error
 			urlStr,
 			nil,
 			&result,
-			client.SignedRequest,
+			client.SignedRequest(),
 		); err != nil {
 			return fmt.Errorf("用户[%s]查询成就失败: %w", user.Uid, err)
 		}

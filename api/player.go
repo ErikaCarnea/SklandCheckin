@@ -32,7 +32,7 @@ func (p *PlayerAPI) PrintAllPlayersInfo(bindings []models.Binding) error {
 			urlStr,
 			nil,
 			&playerData,
-			client.SignedRequest,
+			client.SignedRequest(),
 		); err != nil {
 			return fmt.Errorf("获取玩家[%s]信息失败: %w", binding.Uid, err)
 		}

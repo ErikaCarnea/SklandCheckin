@@ -8,16 +8,18 @@ type RequestOptions struct {
 	Timeout  time.Duration
 }
 
-var (
-	// SignedRequest 需要签名的请求选项
-	SignedRequest = RequestOptions{
+// SignedRequest 返回一个需要签名的请求选项副本
+func SignedRequest() RequestOptions {
+	return RequestOptions{
 		NeedSign: true,
 		Headers:  make(map[string]string),
 	}
+}
 
-	// UnsignedRequest 不需要签名的请求选项
-	UnsignedRequest = RequestOptions{
+// UnsignedRequest 返回一个不需要签名的请求选项副本
+func UnsignedRequest() RequestOptions {
+	return RequestOptions{
 		NeedSign: false,
 		Headers:  make(map[string]string),
 	}
-)
+}

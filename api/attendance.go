@@ -31,7 +31,7 @@ func (a *AttendanceAPI) SignArknights(b models.Binding) (*models.AttendanceResul
 		AttendanceURL,
 		reqBody,
 		&result,
-		client.SignedRequest,
+		client.SignedRequest(),
 	); err != nil {
 		return nil, fmt.Errorf("%v | %w",
 			b.ToString(),
@@ -81,7 +81,7 @@ func (a *AttendanceAPI) getAttendanceInfo(binding models.Binding, gameID int) (*
 			urlStr,
 			nil,
 			&attendanceInfo,
-			client.SignedRequest,
+			client.SignedRequest(),
 		); err != nil {
 			return nil, fmt.Errorf("查询签到信息失败: %w", err)
 		}
@@ -97,10 +97,7 @@ func (a *AttendanceAPI) SignEndfield(role models.Role) (*models.EndfieldResult, 
 	var result models.EndfieldResult
 	skGameRole := fmt.Sprintf("3_%s_%s", role.RoleId, role.ServerId)
 
-	opts := client.SignedRequest
-	if opts.Headers == nil {
-		opts.Headers = make(map[string]string)
-	}
+	opts := client.SignedRequest()
 	// 添加sk-game-role头
 	opts.Headers["sk-game-role"] = skGameRole
 	// 还可以添加其他Endfield需要的头，比如referer和origin

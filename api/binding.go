@@ -25,7 +25,7 @@ func (b *BindingAPI) GetBindingList() (models.BindingResult, error) {
 		BindingURL,
 		nil,
 		&result,
-		client.SignedRequest,
+		client.SignedRequest(),
 	); err != nil {
 		return models.BindingResult{}, err
 	}

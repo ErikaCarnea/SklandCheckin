@@ -78,7 +78,7 @@ func (a *AuthAPI) LoginByPassword() (*models.CredResult, error) {
 		PhonePasswordURL,
 		reqBody,
 		&loginResult,
-		client.UnsignedRequest,
+		client.UnsignedRequest(),
 	); err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		SendPhoneCodeURL,
 		map[string]any{"phone": phone, "type": 2},
 		&sendCodeResult,
-		client.UnsignedRequest,
+		client.UnsignedRequest(),
 	); err != nil {
 		return nil, fmt.Errorf("发送验证码失败: %w", err)
 	}
@@ -131,7 +131,7 @@ func (a *AuthAPI) LoginByPhoneCode() (*models.CredResult, error) {
 		TokenByPhoneCodeUrl,
 		map[string]string{"phone": phone, "code": code},
 		&loginResult,
-		client.UnsignedRequest,
+		client.UnsignedRequest(),
 	); err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (a *AuthAPI) GetCredByToken(token string) (*models.CredResult, error) {
 		GenerateCredURL,
 		reqBody,
 		&credResult,
-		client.UnsignedRequest,
+		client.UnsignedRequest(),
 	); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (a *AuthAPI) getGrantCode(token string) (string, error) {
 		GrantURL,
 		map[string]any{"appCode": AppCode, "token": token, "type": 0},
 		&result,
-		client.UnsignedRequest,
+		client.UnsignedRequest(),
 	); err != nil {
 		return "", err
 	}

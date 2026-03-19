@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
+	"context"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
@@ -52,7 +53,6 @@ func NewClient() SklandHTTPClient {
 		headers: map[string]string{
 			"User-Agent":      UserAgent,
 			"Accept-Encoding": "gzip",
-			"Connection":      "keep-alive",
 		},
 	}
 }
@@ -65,38 +65,38 @@ func (c *httpClient) SetSignToken(token string) {
 	c.signToken = token
 }
 
-func (c *httpClient) doRequest(method, url string, body any, headers map[string]string, timeout time.Duration) (*http.Response, error) {
-	var reqBody io.Reader
-	if body != nil {
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		reqBody = bytes.NewBuffer(jsonBody)
-	}
+// func (c *httpClient) doRequest(method, url string, body any, headers map[string]string, timeout time.Duration) (*http.Response, error) {
+// 	var reqBody io.Reader
+// 	if body != nil {
+// 		jsonBody, err := json.Marshal(body)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		reqBody = bytes.NewBuffer(jsonBody)
+// 	}
 
-	req, err := http.NewRequest(method, url, reqBody)
-	if err != nil {
-		return nil, err
-	}
+// 	req, err := http.NewRequest(method, url, reqBody)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// 设置headers
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
+// 	// 设置headers
+// 	for k, v := range headers {
+// 		req.Header.Set(k, v)
+// 	}
 
-	// 使用自定义超时（如果提供）
-	client := c.client
-	if timeout > 0 {
-		clientCopy := *c.client
-		clientCopy.Timeout = timeout
-		client = &clientCopy
-	}
+// 	// 使用自定义超时（如果提供）
+// 	client := c.client
+// 	if timeout > 0 {
+// 		clientCopy := *c.client
+// 		clientCopy.Timeout = timeout
+// 		client = &clientCopy
+// 	}
 
-	return client.Do(req)
-}
+// 	return client.Do(req)
+// }
 
-func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string]string, error) {
+func (c *httpClient) GetSignHeaders(urlStr, method string, bodyBytes []byte) (map[string]string, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -105,12 +105,8 @@ func (c *httpClient) GetSignHeaders(urlStr, method string, body any) (map[string
 	var bodyOrQuery string
 	if method == http.MethodGet {
 		bodyOrQuery = u.RawQuery
-	} else if body != nil {
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		bodyOrQuery = string(jsonBody)
+	} else if len(bodyBytes) > 0 {
+		bodyOrQuery = string(bodyBytes)
 	}
 
 	sign, headerCa, err := c.generateSignature(u.Path, bodyOrQuery)
@@ -139,22 +135,47 @@ func (c *httpClient) ExecuteRequest(method, urlStr string, reqBody any, respTarg
 	maps.Copy(headers, c.headers)
 	maps.Copy(headers, options.Headers)
 
-	// 如果请求体存在，设置Content-Type
+	// 预序列化请求体（如果存在）
+	var bodyBytes []byte
+	var err error
 	if reqBody != nil {
+		bodyBytes, err = json.Marshal(reqBody)
+		if err != nil {
+			return fmt.Errorf("序列化请求体失败: %w", err)
+		}
 		headers["Content-Type"] = "application/json"
 	}
 
 	// 生成签名 (如果需要)
 	if options.NeedSign {
-		signHeaders, err := c.GetSignHeaders(urlStr, method, reqBody)
+		signHeaders, err := c.GetSignHeaders(urlStr, method, bodyBytes)
 		if err != nil {
 			return fmt.Errorf("生成签名头失败: %w", err)
 		}
 		maps.Copy(headers, signHeaders)
 	}
 
-	// 2. 发送请求
-	resp, err := c.doRequest(method, urlStr, reqBody, headers, options.Timeout)
+	// 构造请求
+	var reqBodyReader io.Reader
+	if len(bodyBytes) > 0 {
+		reqBodyReader = bytes.NewReader(bodyBytes)
+	}
+	req, err := http.NewRequest(method, urlStr, reqBodyReader)
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %w", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	client := c.client
+	if options.Timeout > 0 {
+		ctx, cancel := context.WithTimeout(req.Context(), options.Timeout)
+		defer cancel()
+		req = req.WithContext(ctx)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("请求发送失败: %w", err)
 	}
@@ -183,7 +204,7 @@ func (c *httpClient) parseResponse(resp *http.Response, target models.APIRespons
 func CloseResponse(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
-			log.Error().Err(err).Msg("关闭响应体失败")
+			log.Warn().Err(err).Msg("关闭响应体失败")
 		}
 	}
 }

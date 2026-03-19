@@ -45,7 +45,7 @@ func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
 		CheckinURL,
 		reqBody,
 		&resp,
-		client.SignedRequest,
+		client.SignedRequest(),
 	)
 
 	if err != nil {
@@ -67,7 +67,7 @@ func (c *CheckinAPI) CheckIsCheckin(gameID int) (bool, error) {
 		IsCheckinURL,
 		nil,
 		&result,
-		client.SignedRequest,
+		client.SignedRequest(),
 	); err != nil {
 		return false, err
 	}
@@ -87,7 +87,7 @@ func (c *CheckinAPI) GetAllCheckinStatus() (map[int]bool, error) {
 		IsCheckinURL,
 		nil,
 		&result,
-		client.SignedRequest,
+		client.SignedRequest(),
 	); err != nil {
 		return nil, err
 	}
