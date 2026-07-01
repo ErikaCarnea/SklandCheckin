@@ -60,26 +60,6 @@ func (c *CheckinAPI) Checkin(gameID int) (*models.CheckinResponse, error) {
 	return &resp, nil
 }
 
-func (c *CheckinAPI) CheckIsCheckin(gameID int) (bool, error) {
-	var result models.IsCheckinResponse
-	if err := c.client.ExecuteRequest(
-		http.MethodGet,
-		IsCheckinURL,
-		nil,
-		&result,
-		client.SignedRequest(),
-	); err != nil {
-		return false, err
-	}
-
-	for _, item := range result.Data.List {
-		if item.GameId == gameID {
-			return item.Checked == 1, nil
-		}
-	}
-	return false, nil
-}
-
 func (c *CheckinAPI) GetAllCheckinStatus() (map[int]bool, error) {
 	var result models.IsCheckinResponse
 	if err := c.client.ExecuteRequest(

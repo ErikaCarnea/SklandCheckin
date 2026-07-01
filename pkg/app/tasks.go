@@ -7,13 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (ctx *AppContext) PerformSignAttendance() bool {
-	// 获取绑定列表
-	bindings, err := ctx.BindidngAPI.GetBindingList()
-	if err != nil {
-		log.Error().Err(err).Msg("获取绑定列表失败")
-		return false
-	}
+func (ctx *AppContext) PerformSignAttendance(bindings models.BindingResult) bool {
 	var signErrors []error
 	// 打印玩家信息
 	// if err := ctx.PlayerAPI.PrintAllPlayersInfo(bindings); err != nil {
@@ -145,11 +139,7 @@ func (ctx *AppContext) RunCheckinTasks() bool {
 	return allTasksCompleted
 }
 
-func (ctx *AppContext) GetPopucomAchievement() {
-	bindings, err := ctx.BindidngAPI.GetBindingList()
-	if err != nil {
-		log.Error().Err(err).Msg("获取绑定列表失败")
-	}
+func (ctx *AppContext) GetPopucomAchievement(bindings models.BindingResult) {
 	for _, data := range bindings.Data.List {
 		if data.AppCode == "popucom" {
 			ctx.PopucomAPI.GetPopucomAchievement(data.BindingList, ctx.CredResult.Data.UserId)
@@ -157,11 +147,7 @@ func (ctx *AppContext) GetPopucomAchievement() {
 	}
 }
 
-func (ctx *AppContext) GetExaAchievement() {
-	bindings, err := ctx.BindidngAPI.GetBindingList()
-	if err != nil {
-		log.Error().Err(err).Msg("获取绑定列表失败")
-	}
+func (ctx *AppContext) GetExaAchievement(bindings models.BindingResult) {
 	for _, data := range bindings.Data.List {
 		if data.AppCode == "exa" {
 			ctx.ExaAPI.GetExastrisAchievement(data.BindingList, ctx.CredResult.Data.UserId)

@@ -11,7 +11,7 @@ import (
 type AppContext struct {
 	HttpClient    client.SklandHTTPClient
 	AuthAPI       *api.AuthAPI
-	BindidngAPI   *api.BindingAPI
+	BindingAPI    *api.BindingAPI
 	AttendanceAPI *api.AttendanceAPI
 	PlayerAPI     *api.PlayerAPI
 	CheckinAPI    *api.CheckinAPI
@@ -25,7 +25,7 @@ func NewAppContext() *AppContext {
 	return &AppContext{
 		HttpClient:    httpClient,
 		AuthAPI:       api.NewAuthAPI(httpClient),
-		BindidngAPI:   api.NewBindingAPI(httpClient),
+		BindingAPI:    api.NewBindingAPI(httpClient),
 		AttendanceAPI: api.NewAttendanceAPI(httpClient),
 		PlayerAPI:     api.NewPlayerAPI(httpClient),
 		CheckinAPI:    api.NewCheckinAPI(httpClient),
@@ -43,10 +43,16 @@ func (ctx *AppContext) Run() {
 	ctx.HttpClient.SetCred(ctx.CredResult.Data.Cred)
 	ctx.HttpClient.SetSignToken(ctx.CredResult.Data.Token)
 
-	ctx.GetPopucomAchievement()
-	ctx.GetExaAchievement()
+	bindings, err := ctx.BindingAPI.GetBindingList()
+	if err != nil {
+		log.Error().Err(err).Msg("获取绑定列表失败")
+		return
+	}
 
-	hasSigned := ctx.PerformSignAttendance()
+	ctx.GetPopucomAchievement(bindings)
+	ctx.GetExaAchievement(bindings)
+
+	hasSigned := ctx.PerformSignAttendance(bindings)
 
 	hasCheckedIn := ctx.RunCheckinTasks()
 

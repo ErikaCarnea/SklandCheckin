@@ -20,14 +20,21 @@
 # Go workspace file
 go.work
 
+# WorkBuddy workspace files
+.workbuddy/
+
+# Self
 .gitignore
 .gitattributes
 
+# Config files
 *.yaml
 
-.idea
-.vscode
+# IDE
+.idea/
+.vscode/
 
+# Project specific
 token.txt
 logs/
 mark/

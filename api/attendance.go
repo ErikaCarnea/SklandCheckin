@@ -86,6 +86,7 @@ func (a *AttendanceAPI) getAttendanceInfo(binding models.Binding, gameID int) (*
 			return nil, fmt.Errorf("查询签到信息失败: %w", err)
 		}
 	case 3:
+		// 终末地签到不走 attendance 接口，由 SignEndfield 单独处理
 		urlStr = fmt.Sprintf("https://zonai.skland.com/web/v1/game/endfield/attendance?uid=%s&gameId=%d", binding.Roles[0].RoleId, gameID)
 	default:
 		return nil, fmt.Errorf("游戏ID错误: %s %d", SklandBoard[gameID], gameID)
@@ -113,15 +114,13 @@ func (a *AttendanceAPI) SignEndfield(role models.Role) (*models.EndfieldResult, 
 	); err != nil {
 		return nil, fmt.Errorf("%v | %w", role.ToString(), err)
 	}
-	if result.GetCode() == 10001 {
+
+	switch result.GetCode() {
+	case 0:
 		return &result, nil
+	case 10001:
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("%v | %s", role.ToString(), result.GetMessage())
 	}
-	if result.GetCode() == 10000 {
-		return nil, fmt.Errorf("%v | %s", role.ToString(), result.Message)
-	} else if result.GetCode() == 10002 {
-		return nil, fmt.Errorf("%v | %s", role.ToString(), result.Message)
-	} else if result.GetCode() != 0 {
-		return nil, fmt.Errorf("%v | %s", role.ToString(), result.Message)
-	}
-	return &result, nil
 }
