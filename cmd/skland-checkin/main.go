@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/ErikaCarnea/Skland/internal/app"
 	"github.com/ErikaCarnea/Skland/internal/logger"
@@ -13,7 +12,7 @@ import (
 func main() {
 	logger.Init()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
 	a := app.NewApp()

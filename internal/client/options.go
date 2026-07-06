@@ -13,6 +13,7 @@ type RequestOptions struct {
 }
 
 // WithSign 请求需要签名。
+// 注意：NeedSign 默认为 true，此选项为显式声明用途保留，实际不需要调用。
 func WithSign() RequestOption {
 	return func(o *RequestOptions) {
 		o.NeedSign = true

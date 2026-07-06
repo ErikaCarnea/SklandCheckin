@@ -39,3 +39,11 @@ token.txt
 logs/
 mark/
 test.json
+
+# 编译产物目录
+build/
+skland-checkin
+
+# 临时文件
+tmp/
+temp/

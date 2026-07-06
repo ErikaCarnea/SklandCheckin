@@ -42,9 +42,6 @@ func (a *AuthService) tryAutoLogin(ctx context.Context, token string) *models.Cr
 	credResult, err := a.api.GetCredByToken(ctx, token)
 	if err != nil {
 		log.Error().Err(err).Msg("自动登录失败，删除无效token文件")
-		// 删除实际 token 文件
-		tokenPath, _ := config.SaveToken("") // 获取路径
-		_ = tokenPath
 		if err := config.DeleteTokenFile(); err != nil {
 			log.Error().Err(err).Msg("删除token文件失败")
 		}

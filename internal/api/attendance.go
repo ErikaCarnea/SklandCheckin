@@ -44,7 +44,7 @@ func (a *AttendanceAPI) QueryAttendanceInfo(ctx context.Context, b models.Bindin
 		return false
 	}
 
-	cstZone := time.FixedZone("CST", 8*60*60)
+	cstZone := time.FixedZone("Asia/Shanghai", 8*60*60)
 	now := time.Now().In(cstZone)
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, cstZone)
 	todayUnix := today.Unix()

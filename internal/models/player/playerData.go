@@ -211,7 +211,7 @@ type trading struct {
 	CompleteWorkTime int64         `json:"completeWorkTime"`
 	LastUpdateTime   int64         `json:"lastUpdateTime"`
 	Strategy         string        `json:"strategy"`
-	Stock            []interface{} `json:"stock"`
+	Stock            []any         `json:"stock"`
 	StockLimit       int           `json:"stockLimit"`
 }
 

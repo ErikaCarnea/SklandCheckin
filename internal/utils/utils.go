@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -14,9 +13,12 @@ import (
 func WaitForExit() {
 	log.Info().Msg("签到执行完毕，按回车键退出程序（10秒后自动退出）...")
 
-	inputCh := make(chan int)
+	inputCh := make(chan int, 1)
 	go func() {
-		n, _ := fmt.Fscanln(os.Stdin)
+		n, err := fmt.Fscanln(os.Stdin)
+		if err != nil {
+			n = 0
+		}
 		inputCh <- n
 	}()
 
@@ -26,9 +28,4 @@ func WaitForExit() {
 	case <-time.After(10 * time.Second):
 		log.Info().Msg("等待超时，程序自动退出")
 	}
-}
-
-// Fprint 是 fmt.Fprint 的别名，方便从 utils 包直接输出（向后兼容）。
-var Fprint = func(w io.Writer, a ...any) (int, error) {
-	return fmt.Fprint(w, a...)
 }

@@ -8,6 +8,9 @@ import (
 )
 
 func FormatArknightSignResult(result *models.AttendanceResult) string {
+	if result == nil {
+		return "签到结果为空"
+	}
 	var awards strings.Builder
 	for _, award := range result.Data.Awards {
 		fmt.Fprintf(&awards, "获得奖励：%s x%d (类型：%s)\n",
@@ -20,6 +23,9 @@ func FormatArknightSignResult(result *models.AttendanceResult) string {
 }
 
 func FormatEndfieldSignResult(result *models.EndfieldResult) string {
+	if result == nil {
+		return "签到结果为空"
+	}
 	var awards strings.Builder
 	if result.Code == 10001 {
 		return "今日已签到，明日再来吧！"

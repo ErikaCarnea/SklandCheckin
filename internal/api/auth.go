@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -119,7 +120,7 @@ func (a *AuthAPI) GetCredByToken(ctx context.Context, token string) (*models.Cre
 	}
 
 	if credResult.GetCode() != 0 {
-		return nil, fmt.Errorf("%s", credResult.GetMessage())
+		return nil, errors.New(credResult.GetMessage())
 	}
 	return credResult, nil
 }
