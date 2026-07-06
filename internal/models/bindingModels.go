@@ -1,6 +1,9 @@
 package models
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Binding struct {
 	ChannelMasterId string      `json:"channelMasterId"`
@@ -41,7 +44,7 @@ type BindingResult struct {
 			BindingList []Binding `json:"bindingList"`
 			DefaultUid  string    `json:"defaultUid"`
 		} `json:"list"`
-		ServerDefaultBinding any `json:"serverDefaultBinding"`
+		ServerDefaultBinding json.RawMessage `json:"serverDefaultBinding"`
 	} `json:"data"`
 }
 

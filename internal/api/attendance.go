@@ -1,13 +1,14 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/ErikaCarnea/Skland/client"
-	"github.com/ErikaCarnea/Skland/models"
+	"github.com/ErikaCarnea/Skland/internal/client"
+	"github.com/ErikaCarnea/Skland/internal/models"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,26 +23,24 @@ func NewAttendanceAPI(client client.SklandHTTPClient) *AttendanceAPI {
 	return &AttendanceAPI{client: client}
 }
 
-func (a *AttendanceAPI) SignArknights(b models.Binding) (*models.AttendanceResult, error) {
+func (a *AttendanceAPI) SignArknights(ctx context.Context, b models.Binding) (*models.AttendanceResult, error) {
 	reqBody := models.AttendanceRequest{Uid: b.Uid, GameId: b.ChannelMasterId}
 	var result models.AttendanceResult
 
-	if err := a.client.ExecuteRequest(
+	if err := a.client.ExecuteRequest(ctx,
 		http.MethodPost,
 		AttendanceURL,
 		reqBody,
 		&result,
-		client.SignedRequest(),
+		client.WithSign(),
 	); err != nil {
-		return nil, fmt.Errorf("%v | %w",
-			b.ToString(),
-			err)
+		return nil, fmt.Errorf("%v | %w", b.ToString(), err)
 	}
 	return &result, nil
 }
 
-func (a *AttendanceAPI) QueryAttendanceInfo(b models.Binding, gameID int) bool {
-	attendanceInfo, err := a.getAttendanceInfo(b, gameID)
+func (a *AttendanceAPI) QueryAttendanceInfo(ctx context.Context, b models.Binding, gameID models.GameID) bool {
+	attendanceInfo, err := a.getAttendanceInfo(ctx, b, gameID)
 	if err != nil {
 		log.Error().Err(err).Msg("查询签到信息失败")
 		return false
@@ -67,58 +66,48 @@ func (a *AttendanceAPI) QueryAttendanceInfo(b models.Binding, gameID int) bool {
 		}
 	}
 	return false
-
 }
 
-func (a *AttendanceAPI) getAttendanceInfo(binding models.Binding, gameID int) (*models.AttendanceInfo, error) {
-	var urlStr string
+func (a *AttendanceAPI) getAttendanceInfo(ctx context.Context, binding models.Binding, gameID models.GameID) (*models.AttendanceInfo, error) {
 	var attendanceInfo models.AttendanceInfo
 	switch gameID {
-	case 1:
-		urlStr = fmt.Sprintf("https://zonai.skland.com/api/v1/game/attendance?uid=%s&gameId=%d", binding.Uid, gameID)
-		if err := a.client.ExecuteRequest(
+	case models.GameArknights:
+		urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/attendance?uid=%s&gameId=%d", binding.Uid, gameID)
+		if err := a.client.ExecuteRequest(ctx,
 			http.MethodGet,
 			urlStr,
 			nil,
 			&attendanceInfo,
-			client.SignedRequest(),
+			client.WithSign(),
 		); err != nil {
 			return nil, fmt.Errorf("查询签到信息失败: %w", err)
 		}
-	case 3:
-		// 终末地签到不走 attendance 接口，由 SignEndfield 单独处理
-		urlStr = fmt.Sprintf("https://zonai.skland.com/web/v1/game/endfield/attendance?uid=%s&gameId=%d", binding.Roles[0].RoleId, gameID)
 	default:
-		return nil, fmt.Errorf("游戏ID错误: %s %d", SklandBoard[gameID], gameID)
+		return nil, fmt.Errorf("不支持的游戏ID: %s %d", gameID.String(), gameID)
 	}
 	return &attendanceInfo, nil
 }
 
-func (a *AttendanceAPI) SignEndfield(role models.Role) (*models.EndfieldResult, error) {
+func (a *AttendanceAPI) SignEndfield(ctx context.Context, role models.Role) (*models.EndfieldResult, error) {
 	var result models.EndfieldResult
 	skGameRole := fmt.Sprintf("3_%s_%s", role.RoleId, role.ServerId)
 
-	opts := client.SignedRequest()
-	// 添加sk-game-role头
-	opts.Headers["sk-game-role"] = skGameRole
-	// 还可以添加其他Endfield需要的头，比如referer和origin
-	opts.Headers["referer"] = "https://game.skland.com/"
-	opts.Headers["origin"] = "https://game.skland.com/"
-	opts.Headers["Content-Type"] = "application/json"
-	if err := a.client.ExecuteRequest(
+	if err := a.client.ExecuteRequest(ctx,
 		http.MethodPost,
-		EndfieldSignURL, // 使用正确的URL
-		nil,             // 请求体为空
+		EndfieldSignURL,
+		nil,
 		&result,
-		opts, // 使用包含sk-game-role的选项
+		client.WithSign(),
+		client.WithHeader("sk-game-role", skGameRole),
+		client.WithHeader("referer", "https://game.skland.com/"),
+		client.WithHeader("origin", "https://game.skland.com/"),
+		client.WithHeader("Content-Type", "application/json"),
 	); err != nil {
 		return nil, fmt.Errorf("%v | %w", role.ToString(), err)
 	}
 
 	switch result.GetCode() {
-	case 0:
-		return &result, nil
-	case 10001:
+	case 0, 10001:
 		return &result, nil
 	default:
 		return nil, fmt.Errorf("%v | %s", role.ToString(), result.GetMessage())

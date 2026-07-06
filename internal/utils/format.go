@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ErikaCarnea/Skland/models"
+	"github.com/ErikaCarnea/Skland/internal/models"
 )
 
 func FormatArknightSignResult(result *models.AttendanceResult) string {
