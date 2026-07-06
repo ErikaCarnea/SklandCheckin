@@ -22,18 +22,10 @@ func NewPlayerAPI(client client.SklandHTTPClient) *PlayerAPI {
 // PrintAllPlayersInfo 查询并输出玩家详细信息。
 // 输出委托给调用方 — 通过 zerolog 记录结构化日志，避免 fmt.Printf 混入 API 层。
 func (p *PlayerAPI) PrintAllPlayersInfo(ctx context.Context, bindings []models.Binding) error {
-	var playerData player.PlayerResponse
-
 	for _, binding := range bindings {
 		urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/player/info?uid=%s", binding.Uid)
 
-		if err := p.client.ExecuteRequest(ctx,
-			http.MethodGet,
-			urlStr,
-			nil,
-			&playerData,
-			client.WithSign(),
-		); err != nil {
+		if _, err := client.ExecuteRequest[player.PlayerResponse](ctx, p.client, http.MethodGet, urlStr, nil, client.WithSign()); err != nil {
 			return fmt.Errorf("获取玩家[%s]信息失败: %w", binding.Uid, err)
 		}
 

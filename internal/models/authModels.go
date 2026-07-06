@@ -8,10 +8,10 @@ type LoginResult struct {
 	} `json:"data"`
 }
 
-func (r *LoginResult) GetCode() int {
+func (r LoginResult) GetCode() int {
 	return r.Status
 }
-func (r *LoginResult) GetMessage() string {
+func (r LoginResult) GetMessage() string {
 	return r.Message
 }
 
@@ -40,10 +40,10 @@ type CredResult struct {
 	} `json:"data"`
 }
 
-func (r *CredResult) GetCode() int {
+func (r CredResult) GetCode() int {
 	return r.Code
 }
-func (r *CredResult) GetMessage() string {
+func (r CredResult) GetMessage() string {
 	return r.Message
 }
 
@@ -52,10 +52,10 @@ type SendCodeResult struct {
 	Message string `json:"msg"`
 }
 
-func (r *SendCodeResult) GetCode() int {
+func (r SendCodeResult) GetCode() int {
 	return r.Status
 }
 
-func (r *SendCodeResult) GetMessage() string {
+func (r SendCodeResult) GetMessage() string {
 	return r.Message
 }

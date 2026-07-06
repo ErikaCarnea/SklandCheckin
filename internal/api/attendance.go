@@ -25,18 +25,11 @@ func NewAttendanceAPI(client client.SklandHTTPClient) *AttendanceAPI {
 
 func (a *AttendanceAPI) SignArknights(ctx context.Context, b models.Binding) (*models.AttendanceResult, error) {
 	reqBody := models.AttendanceRequest{Uid: b.Uid, GameId: b.ChannelMasterId}
-	var result models.AttendanceResult
-
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		AttendanceURL,
-		reqBody,
-		&result,
-		client.WithSign(),
-	); err != nil {
+	result, err := client.ExecuteRequest[models.AttendanceResult](ctx, a.client, http.MethodPost, AttendanceURL, reqBody, client.WithSign())
+	if err != nil {
 		return nil, fmt.Errorf("%v | %w", b.ToString(), err)
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (a *AttendanceAPI) QueryAttendanceInfo(ctx context.Context, b models.Binding, gameID models.GameID) bool {
@@ -69,46 +62,35 @@ func (a *AttendanceAPI) QueryAttendanceInfo(ctx context.Context, b models.Bindin
 }
 
 func (a *AttendanceAPI) getAttendanceInfo(ctx context.Context, binding models.Binding, gameID models.GameID) (*models.AttendanceInfo, error) {
-	var attendanceInfo models.AttendanceInfo
 	switch gameID {
 	case models.GameArknights:
 		urlStr := fmt.Sprintf("https://zonai.skland.com/api/v1/game/attendance?uid=%s&gameId=%d", binding.Uid, gameID)
-		if err := a.client.ExecuteRequest(ctx,
-			http.MethodGet,
-			urlStr,
-			nil,
-			&attendanceInfo,
-			client.WithSign(),
-		); err != nil {
+		attendanceInfo, err := client.ExecuteRequest[models.AttendanceInfo](ctx, a.client, http.MethodGet, urlStr, nil, client.WithSign())
+		if err != nil {
 			return nil, fmt.Errorf("查询签到信息失败: %w", err)
 		}
+		return attendanceInfo, nil
 	default:
 		return nil, fmt.Errorf("不支持的游戏ID: %s %d", gameID.String(), gameID)
 	}
-	return &attendanceInfo, nil
 }
 
 func (a *AttendanceAPI) SignEndfield(ctx context.Context, role models.Role) (*models.EndfieldResult, error) {
-	var result models.EndfieldResult
 	skGameRole := fmt.Sprintf("3_%s_%s", role.RoleId, role.ServerId)
-
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		EndfieldSignURL,
-		nil,
-		&result,
+	result, err := client.ExecuteRequest[models.EndfieldResult](ctx, a.client, http.MethodPost, EndfieldSignURL, nil,
 		client.WithSign(),
 		client.WithHeader("sk-game-role", skGameRole),
 		client.WithHeader("referer", "https://game.skland.com/"),
 		client.WithHeader("origin", "https://game.skland.com/"),
 		client.WithHeader("Content-Type", "application/json"),
-	); err != nil {
+	)
+	if err != nil {
 		return nil, fmt.Errorf("%v | %w", role.ToString(), err)
 	}
 
 	switch result.GetCode() {
 	case 0, 10001:
-		return &result, nil
+		return result, nil
 	default:
 		return nil, fmt.Errorf("%v | %s", role.ToString(), result.GetMessage())
 	}

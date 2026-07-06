@@ -46,12 +46,12 @@ type AttendanceInfo struct {
 }
 
 // GetCode implements APIResponse.
-func (a *AttendanceInfo) GetCode() int {
+func (a AttendanceInfo) GetCode() int {
 	return a.Code
 }
 
 // GetMessage implements APIResponse.
-func (a *AttendanceInfo) GetMessage() string {
+func (a AttendanceInfo) GetMessage() string {
 	return a.Message
 }
 

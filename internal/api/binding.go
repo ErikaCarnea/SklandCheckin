@@ -20,19 +20,13 @@ func NewBindingAPI(client client.SklandHTTPClient) *BindingAPI {
 }
 
 func (b *BindingAPI) GetBindingList(ctx context.Context) (models.BindingResult, error) {
-	var result models.BindingResult
-	if err := b.client.ExecuteRequest(ctx,
-		http.MethodGet,
-		BindingURL,
-		nil,
-		&result,
-		client.WithSign(),
-	); err != nil {
+	result, err := client.ExecuteRequest[models.BindingResult](ctx, b.client, http.MethodGet, BindingURL, nil, client.WithSign())
+	if err != nil {
 		return models.BindingResult{}, err
 	}
 
 	if result.GetCode() != 0 {
 		return models.BindingResult{}, fmt.Errorf("API错误: %s (code: %d)", result.Message, result.Code)
 	}
-	return result, nil
+	return *result, nil
 }

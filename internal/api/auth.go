@@ -37,14 +37,8 @@ func (a *AuthAPI) LoginByPassword(ctx context.Context, phone, password string) (
 		"phone":    phone,
 		"password": password,
 	}
-	var loginResult models.LoginResult
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		PhonePasswordURL,
-		reqBody,
-		&loginResult,
-		client.WithoutSign(),
-	); err != nil {
+	loginResult, err := client.ExecuteRequest[models.LoginResult](ctx, a.client, http.MethodPost, PhonePasswordURL, reqBody, client.WithoutSign())
+	if err != nil {
 		return nil, err
 	}
 
@@ -56,14 +50,8 @@ func (a *AuthAPI) LoginByPassword(ctx context.Context, phone, password string) (
 
 // SendPhoneCode 发送手机验证码。
 func (a *AuthAPI) SendPhoneCode(ctx context.Context, phone string) error {
-	var sendCodeResult models.SendCodeResult
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		SendPhoneCodeURL,
-		map[string]any{"phone": phone, "type": 2},
-		&sendCodeResult,
-		client.WithoutSign(),
-	); err != nil {
+	sendCodeResult, err := client.ExecuteRequest[models.SendCodeResult](ctx, a.client, http.MethodPost, SendPhoneCodeURL, map[string]any{"phone": phone, "type": 2}, client.WithoutSign())
+	if err != nil {
 		return fmt.Errorf("发送验证码失败: %w", err)
 	}
 
@@ -77,14 +65,8 @@ func (a *AuthAPI) SendPhoneCode(ctx context.Context, phone string) error {
 func (a *AuthAPI) LoginByPhoneCode(ctx context.Context, phone, code string) (*models.CredResult, error) {
 	log.Info().Str("action", "phone_code_login").Msg("开始手机验证码登录流程")
 
-	var loginResult models.LoginResult
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		TokenByPhoneCodeURL,
-		map[string]string{"phone": phone, "code": code},
-		&loginResult,
-		client.WithoutSign(),
-	); err != nil {
+	loginResult, err := client.ExecuteRequest[models.LoginResult](ctx, a.client, http.MethodPost, TokenByPhoneCodeURL, map[string]string{"phone": phone, "code": code}, client.WithoutSign())
+	if err != nil {
 		return nil, err
 	}
 
@@ -131,32 +113,20 @@ func (a *AuthAPI) GetCredByToken(ctx context.Context, token string) (*models.Cre
 		"kind": 1,
 	}
 
-	var credResult models.CredResult
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		GenerateCredURL,
-		reqBody,
-		&credResult,
-		client.WithoutSign(),
-	); err != nil {
+	credResult, err := client.ExecuteRequest[models.CredResult](ctx, a.client, http.MethodPost, GenerateCredURL, reqBody, client.WithoutSign())
+	if err != nil {
 		return nil, err
 	}
 
 	if credResult.GetCode() != 0 {
 		return nil, fmt.Errorf("%s", credResult.GetMessage())
 	}
-	return &credResult, nil
+	return credResult, nil
 }
 
 func (a *AuthAPI) getGrantCode(ctx context.Context, token string) (string, error) {
-	var result models.GrantResult
-	if err := a.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		GrantURL,
-		map[string]any{"appCode": AppCode, "token": token, "type": 0},
-		&result,
-		client.WithoutSign(),
-	); err != nil {
+	result, err := client.ExecuteRequest[models.GrantResult](ctx, a.client, http.MethodPost, GrantURL, map[string]any{"appCode": AppCode, "token": token, "type": 0}, client.WithoutSign())
+	if err != nil {
 		return "", err
 	}
 	return result.Data.Code, nil

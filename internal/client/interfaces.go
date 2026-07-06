@@ -2,11 +2,10 @@ package client
 
 import (
 	"context"
-
-	"github.com/ErikaCarnea/Skland/internal/models"
+	"net/http"
 )
 
-// Signer 签名生成器接口 — 用于单元测试 mock。
+// Signer 签名生成器接口。
 type Signer interface {
 	GetSignHeaders(ctx context.Context, urlStr, method string, body []byte) (map[string]string, error)
 }
@@ -17,15 +16,28 @@ type CredentialManager interface {
 	SetSignToken(token string)
 }
 
-// HTTPClient HTTP 执行器接口。
-type HTTPClient interface {
-	ExecuteRequest(ctx context.Context, method, urlStr string, reqBody any, respTarget models.APIResponse, opts ...RequestOption) error
+// HTTPDoer 原始 HTTP 执行接口 — 单一职责，便于 mock。
+type HTTPDoer interface {
+	Do(ctx context.Context, req *http.Request) (*http.Response, error)
 }
 
-// SklandHTTPClient 组合接口，方便依赖注入。
-// 调用方可以只依赖子接口（Signer / HTTPClient）以实现更精准的 mock。
+// HeaderProvider 默认请求头提供者。
+type HeaderProvider interface {
+	DefaultHeaders() map[string]string
+}
+
+// HTTPClient 组合接口，供 ExecuteRequest 泛型函数使用。
+type HTTPClient interface {
+	Signer
+	HTTPDoer
+	HeaderProvider
+}
+
+// SklandHTTPClient 全功能客户端接口，组合签名、凭证、HTTP 能力。
+// 供 API 层注入使用。
 type SklandHTTPClient interface {
 	Signer
 	CredentialManager
-	HTTPClient
+	HTTPDoer
+	HeaderProvider
 }

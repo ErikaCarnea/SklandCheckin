@@ -27,15 +27,7 @@ func (c *CheckinAPI) Checkin(ctx context.Context, gameID models.GameID) (*models
 		GameID: strconv.Itoa(int(gameID)),
 	}
 
-	var resp models.CheckinResponse
-
-	err := c.client.ExecuteRequest(ctx,
-		http.MethodPost,
-		CheckinURL,
-		reqBody,
-		&resp,
-		client.WithSign(),
-	)
+	resp, err := client.ExecuteRequest[models.CheckinResponse](ctx, c.client, http.MethodPost, CheckinURL, reqBody, client.WithSign())
 
 	if err != nil {
 		return nil, fmt.Errorf("签到失败: %w", err)
@@ -46,18 +38,12 @@ func (c *CheckinAPI) Checkin(ctx context.Context, gameID models.GameID) (*models
 		return nil, fmt.Errorf("签到失败: %s (code: %d)", resp.Message, resp.Code)
 	}
 
-	return &resp, nil
+	return resp, nil
 }
 
 func (c *CheckinAPI) GetAllCheckinStatus(ctx context.Context) (map[int]bool, error) {
-	var result models.IsCheckinResponse
-	if err := c.client.ExecuteRequest(ctx,
-		http.MethodGet,
-		IsCheckinURL,
-		nil,
-		&result,
-		client.WithSign(),
-	); err != nil {
+	result, err := client.ExecuteRequest[models.IsCheckinResponse](ctx, c.client, http.MethodGet, IsCheckinURL, nil, client.WithSign())
+	if err != nil {
 		return nil, err
 	}
 

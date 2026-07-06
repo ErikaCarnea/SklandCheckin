@@ -68,6 +68,14 @@ func (c *httpClient) SetSignToken(token string) {
 	c.signToken = token
 }
 
+func (c *httpClient) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
+	return c.client.Do(req)
+}
+
+func (c *httpClient) DefaultHeaders() map[string]string {
+	return c.headers
+}
+
 func (c *httpClient) GetSignHeaders(ctx context.Context, urlStr, method string, bodyBytes []byte) (map[string]string, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
@@ -92,7 +100,10 @@ func (c *httpClient) GetSignHeaders(ctx context.Context, urlStr, method string, 
 	return headers, nil
 }
 
-func (c *httpClient) ExecuteRequest(ctx context.Context, method, urlStr string, reqBody any, respTarget models.APIResponse, opts ...RequestOption) error {
+// ExecuteRequest 泛型 HTTP 请求执行器。
+// T 必须实现 models.APIResponse（GetCode / GetMessage）。
+// 返回值直接给出精确类型，无需调用方先声明零值再传递指针。
+func ExecuteRequest[T models.APIResponse](ctx context.Context, c HTTPClient, method, urlStr string, reqBody any, opts ...RequestOption) (*T, error) {
 	options := RequestOptions{
 		NeedSign: true,
 		Headers:  make(map[string]string),
@@ -102,7 +113,7 @@ func (c *httpClient) ExecuteRequest(ctx context.Context, method, urlStr string, 
 	}
 
 	headers := make(map[string]string)
-	maps.Copy(headers, c.headers)
+	maps.Copy(headers, c.DefaultHeaders())
 	maps.Copy(headers, options.Headers)
 
 	var bodyBytes []byte
@@ -110,7 +121,7 @@ func (c *httpClient) ExecuteRequest(ctx context.Context, method, urlStr string, 
 	if reqBody != nil {
 		bodyBytes, err = json.Marshal(reqBody)
 		if err != nil {
-			return fmt.Errorf("序列化请求体失败: %w", err)
+			return nil, fmt.Errorf("序列化请求体失败: %w", err)
 		}
 		headers["Content-Type"] = "application/json"
 	}
@@ -118,7 +129,7 @@ func (c *httpClient) ExecuteRequest(ctx context.Context, method, urlStr string, 
 	if options.NeedSign {
 		signHeaders, err := c.GetSignHeaders(ctx, urlStr, method, bodyBytes)
 		if err != nil {
-			return fmt.Errorf("生成签名头失败: %w", err)
+			return nil, fmt.Errorf("生成签名头失败: %w", err)
 		}
 		maps.Copy(headers, signHeaders)
 	}
@@ -129,38 +140,35 @@ func (c *httpClient) ExecuteRequest(ctx context.Context, method, urlStr string, 
 	}
 	req, err := http.NewRequestWithContext(ctx, method, urlStr, reqBodyReader)
 	if err != nil {
-		return fmt.Errorf("创建请求失败: %w", err)
+		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
 	if options.Timeout > 0 {
-		ctx, cancel := context.WithTimeout(req.Context(), options.Timeout)
+		timeoutCtx, cancel := context.WithTimeout(req.Context(), options.Timeout)
 		defer cancel()
-		req = req.WithContext(ctx)
+		req = req.WithContext(timeoutCtx)
 	}
 
-	resp, err := c.client.Do(req)
+	resp, err := c.Do(ctx, req)
 	if err != nil {
-		return fmt.Errorf("请求发送失败: %w", err)
+		return nil, fmt.Errorf("请求发送失败: %w", err)
 	}
 	defer CloseResponse(resp)
 
-	return c.parseResponse(resp, respTarget)
-}
-
-func (c *httpClient) parseResponse(resp *http.Response, target models.APIResponse) error {
 	body, err := ReadResponseBody(resp)
 	if err != nil {
-		return fmt.Errorf("读取响应失败: %w", err)
+		return nil, fmt.Errorf("读取响应失败: %w", err)
 	}
 
-	if err := json.Unmarshal(body, target); err != nil {
-		return fmt.Errorf("解析响应失败: %w", err)
+	var result T
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("解析响应失败: %w", err)
 	}
 
-	return nil
+	return &result, nil
 }
 
 func CloseResponse(resp *http.Response) {

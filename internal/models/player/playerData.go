@@ -6,11 +6,11 @@ type PlayerResponse struct {
 	Data    data   `json:"data"`
 }
 
-func (p *PlayerResponse) GetCode() int {
+func (p PlayerResponse) GetCode() int {
 	return p.Code
 }
 
-func (p *PlayerResponse) GetMessage() string {
+func (p PlayerResponse) GetMessage() string {
 	return p.Message
 }
 

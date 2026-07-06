@@ -7,10 +7,10 @@ type EndfieldResult struct {
 	Data      EndfieldSignData `json:"data"`
 }
 
-func (e *EndfieldResult) GetCode() int {
+func (e EndfieldResult) GetCode() int {
 	return e.Code
 }
-func (e *EndfieldResult) GetMessage() string {
+func (e EndfieldResult) GetMessage() string {
 	return e.Message
 }
 

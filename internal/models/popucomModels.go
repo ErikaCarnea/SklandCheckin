@@ -8,12 +8,12 @@ type PopucomResult struct {
 }
 
 // GetCode implements APIResponse.
-func (p *PopucomResult) GetCode() int {
+func (p PopucomResult) GetCode() int {
 	return p.Code
 }
 
 // GetMessage implements APIResponse.
-func (p *PopucomResult) GetMessage() string {
+func (p PopucomResult) GetMessage() string {
 	return p.Message
 }
 
