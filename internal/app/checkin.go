@@ -101,7 +101,7 @@ func (c *CheckinService) signAttendance(ctx context.Context, bindings []models.B
 					errors = append(errors, err)
 					continue
 				}
-				log.Info().Msgf("[%s] %s %v", role.ServerName, role.NickName, utils.FormatEndfieldSignResult(result))
+				log.Info().Msgf("[%s] %s %v", role.ServerName, role.Nickname, utils.FormatEndfieldSignResult(result))
 			}
 		}
 	}

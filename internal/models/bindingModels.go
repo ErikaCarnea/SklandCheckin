@@ -26,7 +26,7 @@ func (b Binding) ToString() string {
 type DefaultRole struct {
 	ServerId   string `json:"serverId"`
 	RoleId     string `json:"roleId"`
-	NickName   string `json:"nickName"`
+	Nickname   string `json:"nickname"`
 	Level      int    `json:"level"`
 	IsDefault  bool   `json:"isDefault"`
 	IsBanned   bool   `json:"isBanned"`
@@ -58,7 +58,7 @@ func (r BindingResult) GetMessage() string {
 type Role struct {
 	ServerId   string `json:"serverId"`
 	RoleId     string `json:"roleId"`
-	NickName   string `json:"nickName"`
+	Nickname   string `json:"nickname"`
 	Level      int    `json:"level"`
 	IsDefault  bool   `json:"isDefault"`
 	IsBanned   bool   `json:"isBanned"`
@@ -67,5 +67,5 @@ type Role struct {
 }
 
 func (r Role) ToString() string {
-	return fmt.Sprintf("[%s] UID:%s %s", r.ServerName, r.RoleId, r.NickName)
+	return fmt.Sprintf("[%s] UID:%s %s", r.ServerName, r.RoleId, r.Nickname)
 }
