@@ -52,6 +52,11 @@ func (a *AuthService) tryAutoLogin(ctx context.Context, token string) *models.Cr
 }
 
 func (a *AuthService) loginProcess(ctx context.Context) *models.CredResult {
+	if os.Getenv("CI") == "true" {
+		log.Info().Msg("检测到 CI 环境，自动执行密码登录")
+		return a.ciPasswordLogin(ctx)
+	}
+
 	fmt.Println("请选择登录方式:")
 	fmt.Println("1. 密码登录 (可能触发人机验证)")
 	fmt.Println("2. 手机验证码登录 (可能触发人机验证)")
@@ -153,4 +158,23 @@ func (a *AuthService) codeLogin(ctx context.Context, scanner *bufio.Scanner) (*m
 	code := strings.TrimSpace(scanner.Text())
 
 	return a.api.LoginByCode(ctx, code)
+}
+
+func (a *AuthService) ciPasswordLogin(ctx context.Context) *models.CredResult {
+	phone := os.Getenv("PHONE")
+	password := os.Getenv("PASSWORD")
+	if phone == "" {
+		log.Error().Msg("CI 环境下未设置 PHONE 环境变量")
+		return nil
+	}
+	if password == "" {
+		log.Error().Msg("CI 环境下未设置 PASSWORD 环境变量")
+		return nil
+	}
+	credResult, err := a.api.LoginByPassword(ctx, phone, password)
+	if err != nil {
+		log.Error().Err(err).Msg("CI 密码登录失败")
+		return nil
+	}
+	return credResult
 }
