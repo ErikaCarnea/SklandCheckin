@@ -12,13 +12,24 @@ import (
 
 func Init() {
 	// 初始化日志配置
-	exePath, err := os.Executable()
-	if err != nil {
-		log.Fatal().Err(err).Msg("无法获取可执行文件路径")
+	var logDir string
+	if os.Getenv("CI") == "true" {
+		// 云端自动化：日志存放在当前工作目录（项目根目录）下的 logs/
+		wd, err := os.Getwd()
+		if err != nil {
+			log.Fatal().Err(err).Msg("无法获取当前工作目录")
+		}
+		logDir = filepath.Join(wd, "logs")
+	} else {
+		// 本地手动使用：日志存放在可执行文件同目录下的 logs/
+		exePath, err := os.Executable()
+		if err != nil {
+			log.Fatal().Err(err).Msg("无法获取可执行文件路径")
+		}
+		exeDir := filepath.Dir(exePath)
+		logDir = filepath.Join(exeDir, "logs")
 	}
-	exeDir := filepath.Dir(exePath)
 
-	logDir := filepath.Join(exeDir, "logs")
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		log.Fatal().Err(err).Msg("创建日志目录失败")
 	}
@@ -40,7 +51,6 @@ func Init() {
 	}
 
 	multiWriter := zerolog.MultiLevelWriter(consoleWriter, rotator)
-
 	log.Logger = zerolog.New(multiWriter).With().Timestamp().Logger()
 
 	zerolog.TimestampFieldName = "timestamp"
