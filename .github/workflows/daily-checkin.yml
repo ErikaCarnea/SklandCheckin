@@ -1,4 +1,4 @@
-name: 每日自动签到
+name: Skland每日自动签到
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  sign-in:
+  checkin:
     runs-on: ubuntu-latest
 
     steps:
