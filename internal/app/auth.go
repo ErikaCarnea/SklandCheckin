@@ -163,18 +163,16 @@ func (a *AuthService) codeLogin(ctx context.Context, scanner *bufio.Scanner) (*m
 func (a *AuthService) ciPasswordLogin(ctx context.Context) *models.CredResult {
 	phone := os.Getenv("PHONE")
 	password := os.Getenv("PASSWORD")
-	if phone == "" {
-		log.Error().Msg("CI 环境下未设置 PHONE 环境变量")
+	if phone == "" || password == "" {
+		log.Error().Msg("CI 环境下缺少 PHONE 或 PASSWORD")
 		return nil
 	}
-	if password == "" {
-		log.Error().Msg("CI 环境下未设置 PASSWORD 环境变量")
-		return nil
-	}
+
 	credResult, err := a.api.LoginByPassword(ctx, phone, password)
 	if err != nil {
 		log.Error().Err(err).Msg("CI 密码登录失败")
 		return nil
 	}
+
 	return credResult
 }

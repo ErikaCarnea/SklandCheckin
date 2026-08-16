@@ -12,6 +12,14 @@ const TokenFileName = "token.txt"
 
 // TokenFilePath 返回 token 文件的完整路径。
 func TokenFilePath() (string, error) {
+	if os.Getenv("CI") == "true" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(wd, TokenFileName), nil
+	}
+
 	exePath, err := os.Executable()
 	if err != nil {
 		return "", err
