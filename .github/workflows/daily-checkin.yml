@@ -33,13 +33,14 @@ jobs:
           cache: true
 
       # 恢复 Token 缓存：token 有效时程序直接自动登录，跳过密码登录
-      # 注意：静态 key 只在首次未命中时保存。若 token 意外失效（改密码/异地登录），
-      # 程序会自动回退到密码登录，签到不受影响，仅多一次无效的自动登录尝试
+      # 精确 key 匹配不到时，按 restore-keys 前缀找最近保存的一条
       - name: 恢复 Token 缓存
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: token.txt
-          key: token-cache
+          key: token-cache-${{ github.run_id }}
+          restore-keys: |
+            token-cache-
 
       # 执行签到程序
       # GitHub Actions 会自动设置 CI=true，程序检测到后自动走密码登录流程
@@ -50,6 +51,16 @@ jobs:
         run: |
           go env -w GOPROXY=https://goproxy.cn,direct
           go run ./cmd/skland-checkin
+
+      # 保存 Token 缓存：每次运行都用唯一 key 保存最新的 token.txt，
+      # token 更新后（密码登录产生新 token）下一次运行即可恢复到最新值；
+      # 旧缓存条目由 GitHub 按 LRU 自动淘汰
+      - name: 保存 Token 缓存
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: token.txt
+          key: token-cache-${{ github.run_id }}
 
       # 上传日志（保留3天后自动删除）
       - name: 上传日志
