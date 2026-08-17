@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"os"
 
 	"github.com/ErikaCarnea/Skland/internal/api"
 	"github.com/ErikaCarnea/Skland/internal/client"
@@ -36,6 +37,10 @@ func (a *App) Run(ctx context.Context) {
 	credResult := a.auth.Authenticate(ctx)
 	if credResult == nil {
 		log.Error().Msg("登录失败，程序退出")
+		// CI 环境下以非零码退出，让 workflow 标记为失败并触发通知
+		if os.Getenv("CI") == "true" {
+			os.Exit(1)
+		}
 		return
 	}
 
