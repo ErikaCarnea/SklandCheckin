@@ -32,6 +32,15 @@ jobs:
           go-version: '1.24'
           cache: true
 
+      # 恢复 Token 缓存：token 有效时程序直接自动登录，跳过密码登录
+      # 注意：静态 key 只在首次未命中时保存。若 token 意外失效（改密码/异地登录），
+      # 程序会自动回退到密码登录，签到不受影响，仅多一次无效的自动登录尝试
+      - name: 恢复 Token 缓存
+        uses: actions/cache@v4
+        with:
+          path: token.txt
+          key: token-cache
+
       # 执行签到程序
       # GitHub Actions 会自动设置 CI=true，程序检测到后自动走密码登录流程
       - name: 执行签到
