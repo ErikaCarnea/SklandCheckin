@@ -129,4 +129,4 @@ Workflow 默认每天北京时间 00:00（UTC 16:00）自动执行，与森空�
 
 ## License
 
-MIT © 2025 HeathErika
+MIT © 2025 ErikaCarnea
