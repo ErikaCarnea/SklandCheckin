@@ -3,24 +3,26 @@ name: Skland每日自动签到
 on:
   schedule:
     # 每天 UTC 16:00 执行（即北京时间 00:00）
-    # 森空岛签到/检票在 0 点刷新，安排在整点执行
     - cron: '0 16 * * *'
-  # 允许手动触发，方便测试
   workflow_dispatch:
 
-# 最小权限原则：仅需读取代码
 permissions:
   contents: read
 
-# 同一时刻只允许一个签到任务运行，避免重复签到冲突
 concurrency:
   group: skland-checkin
   cancel-in-progress: false
 
+env:
+  # 可选：显式启用 Node 24 运行 JavaScript Actions，消除弃用警告
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   checkin:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 固定 Ubuntu 版本，避免 ubuntu-latest 未来迁移到 26 的影响
+    runs-on: ubuntu-24.04
+    # 从 10 分钟放宽到 30 分钟，给 go run 首次下载依赖留足时间
+    timeout-minutes: 30
 
     steps:
       - name: 拉取代码
@@ -30,20 +32,20 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: true
+          # 关键改动：临时关闭 setup-go 的 Actions Cache
+          # 规避 Egress 超限导致的 27MB Go 缓存下载失败
+          cache: false
 
-      # 恢复 Token 缓存：token 有效时程序直接自动登录，跳过密码登录
-      # 精确 key 匹配不到时，按 restore-keys 前缀找最近保存的一条
       - name: 恢复 Token 缓存
         uses: actions/cache/restore@v4
+        # 缓存恢复失败时不阻塞后续签到
+        continue-on-error: true
         with:
           path: token.txt
           key: token-cache-${{ github.run_id }}
           restore-keys: |
             token-cache-
 
-      # 执行签到程序
-      # GitHub Actions 会自动设置 CI=true，程序检测到后自动走密码登录流程
       - name: 执行签到
         env:
           PHONE: ${{ secrets.PHONE }}
@@ -52,17 +54,15 @@ jobs:
           go env -w GOPROXY=https://goproxy.cn,direct
           go run ./cmd/skland-checkin
 
-      # 保存 Token 缓存：每次运行都用唯一 key 保存最新的 token.txt，
-      # token 更新后（密码登录产生新 token）下一次运行即可恢复到最新值；
-      # 旧缓存条目由 GitHub 按 LRU 自动淘汰
       - name: 保存 Token 缓存
         if: always()
+        # 缓存保存失败时不把 job 标记为失败
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: token.txt
           key: token-cache-${{ github.run_id }}
 
-      # 上传日志（保留3天后自动删除）
       - name: 上传日志
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,3 +70,5 @@ jobs:
           name: logs-${{ github.run_id }}
           path: logs/
           retention-days: 3
+          # logs/ 不存在时忽略，避免产生警告
+          if-no-files-found: ignore
