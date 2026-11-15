@@ -10,6 +10,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,6 +28,8 @@ const (
 	SignTimestampOffset     = -2 // 签名时间戳偏移量（秒）
 	UserAgent               = "Skland/1.21.0 (com.hypergryph.skland; build:102100065; iOS 17.6.0; ) Alamofire/5.7.1"
 )
+
+var ErrUnauthorized = errors.New("未授权")
 
 type httpClient struct {
 	client    *http.Client
@@ -163,9 +166,21 @@ func ExecuteRequest[T models.APIResponse](ctx context.Context, c HTTPClient, met
 		return nil, fmt.Errorf("读取响应失败: %w", err)
 	}
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		var unauthorized T
+		if err := json.Unmarshal(body, &unauthorized); err == nil && unauthorized.GetMessage() != "" {
+			return nil, fmt.Errorf("%w: %s (code: %d)", ErrUnauthorized, unauthorized.GetMessage(), unauthorized.GetCode())
+		}
+		return nil, fmt.Errorf("%w: HTTP 401", ErrUnauthorized)
+	}
+
 	var result T
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("解析响应失败: %w", err)
+	}
+
+	if result.GetCode() == 10002 {
+		return nil, fmt.Errorf("%w: %s (code: %d)", ErrUnauthorized, result.GetMessage(), result.GetCode())
 	}
 
 	return &result, nil

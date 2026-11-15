@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/ErikaCarnea/Skland/internal/client"
 	"github.com/ErikaCarnea/Skland/internal/models"
@@ -34,7 +35,11 @@ func (c *CheckinAPI) Checkin(ctx context.Context, gameID models.GameID) (*models
 	}
 
 	// code: 10001 表示已签到，不是错误
-	if resp.Code != 0 && resp.Code != 10001 {
+	if resp.Code == 10001 && strings.Contains(resp.GetMessage(), "重复") {
+		return resp, nil
+	}
+
+	if resp.Code != 0 {
 		return nil, fmt.Errorf("签到失败: %s (code: %d)", resp.Message, resp.Code)
 	}
 
@@ -45,6 +50,10 @@ func (c *CheckinAPI) GetAllCheckinStatus(ctx context.Context) (map[int]bool, err
 	result, err := client.ExecuteRequest[models.IsCheckinResponse](ctx, c.client, http.MethodGet, IsCheckinURL, nil, client.WithSign())
 	if err != nil {
 		return nil, err
+	}
+
+	if result.GetCode() != 0 {
+		return nil, fmt.Errorf("获取检票状态失败: %s (code: %d)", result.GetMessage(), result.GetCode())
 	}
 
 	statusMap := make(map[int]bool)

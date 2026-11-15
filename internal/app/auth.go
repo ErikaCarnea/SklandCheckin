@@ -3,12 +3,14 @@ package app
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/ErikaCarnea/Skland/internal/api"
+	"github.com/ErikaCarnea/Skland/internal/client"
 	"github.com/ErikaCarnea/Skland/internal/config"
 	"github.com/ErikaCarnea/Skland/internal/models"
 	"github.com/rs/zerolog/log"
@@ -38,12 +40,24 @@ func (a *AuthService) Authenticate(ctx context.Context) *models.CredResult {
 	return a.loginProcess(ctx)
 }
 
+func (a *AuthService) Reauthenticate(ctx context.Context) *models.CredResult {
+	return a.loginProcess(ctx)
+}
+
+func (a *AuthService) CheckCred(ctx context.Context) error {
+	return a.api.CheckCred(ctx)
+}
+
 func (a *AuthService) tryAutoLogin(ctx context.Context, token string) *models.CredResult {
 	credResult, err := a.api.GetCredByToken(ctx, token)
 	if err != nil {
-		log.Error().Err(err).Msg("自动登录失败，删除无效token文件")
-		if err := config.DeleteTokenFile(); err != nil {
-			log.Error().Err(err).Msg("删除token文件失败")
+		if errors.Is(err, client.ErrUnauthorized) {
+			log.Error().Err(err).Msg("token 已失效，删除无效token文件")
+			if err := config.DeleteTokenFile(); err != nil {
+				log.Error().Err(err).Msg("删除token文件失败")
+			}
+		} else {
+			log.Error().Err(err).Msg("自动登录失败")
 		}
 		return nil
 	}

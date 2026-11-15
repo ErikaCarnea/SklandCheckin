@@ -59,3 +59,21 @@ func (r SendCodeResult) GetCode() int {
 func (r SendCodeResult) GetMessage() string {
 	return r.Message
 }
+
+type CheckCredResult struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		PolicyList []any  `json:"policyList"`
+		IsNewUser  bool   `json:"isNewUser"`
+		Nickname   string `json:"nickname"`
+	} `json:"data"`
+}
+
+func (r CheckCredResult) GetCode() int {
+	return r.Code
+}
+
+func (r CheckCredResult) GetMessage() string {
+	return r.Message
+}

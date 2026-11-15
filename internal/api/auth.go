@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -20,6 +19,7 @@ const (
 	TokenByPhoneCodeURL   = "https://as.hypergryph.com/user/auth/v2/token_by_phone_code"
 	GenerateCredURL       = "https://zonai.skland.com/api/v1/user/auth/generate_cred_by_code"
 	GrantURL              = "https://as.hypergryph.com/user/oauth2/v2/grant"
+	CheckCredURL          = "https://zonai.skland.com/api/v1/user/check"
 )
 
 type AuthAPI struct {
@@ -120,15 +120,33 @@ func (a *AuthAPI) GetCredByToken(ctx context.Context, token string) (*models.Cre
 	}
 
 	if credResult.GetCode() != 0 {
-		return nil, errors.New(credResult.GetMessage())
+		return nil, fmt.Errorf("%w: %s (code: %d)", client.ErrUnauthorized, credResult.GetMessage(), credResult.GetCode())
 	}
 	return credResult, nil
+}
+
+func (a *AuthAPI) CheckCred(ctx context.Context) error {
+	result, err := client.ExecuteRequest[models.CheckCredResult](ctx, a.client, http.MethodGet, CheckCredURL, nil, client.WithSign())
+	if err != nil {
+		return fmt.Errorf("校验 cred 失败: %w", err)
+	}
+
+	if result.GetCode() != 0 {
+		return fmt.Errorf("%w: %s (code: %d)", client.ErrUnauthorized, result.GetMessage(), result.GetCode())
+	}
+
+	log.Debug().Str("nickname", result.Data.Nickname).Msg("cred 校验通过")
+	return nil
 }
 
 func (a *AuthAPI) getGrantCode(ctx context.Context, token string) (string, error) {
 	result, err := client.ExecuteRequest[models.GrantResult](ctx, a.client, http.MethodPost, GrantURL, map[string]any{"appCode": AppCode, "token": token, "type": 0}, client.WithoutSign())
 	if err != nil {
 		return "", err
+	}
+
+	if result.Status != 0 {
+		return "", fmt.Errorf("%w: %s (status: %d)", client.ErrUnauthorized, result.Message, result.Status)
 	}
 	return result.Data.Code, nil
 }

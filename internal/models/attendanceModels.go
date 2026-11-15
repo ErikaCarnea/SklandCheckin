@@ -1,8 +1,8 @@
 package models
 
 type AttendanceRequest struct {
-	Uid    string `json:"uid"`
-	GameId string `json:"channelMasterId"`
+	Uid             string `json:"uid"`
+	ChannelMasterId string `json:"channelMasterId"`
 }
 
 type AttendanceResult struct {
